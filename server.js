@@ -170,7 +170,21 @@ app.delete('/api/paiements/:id', async (req, res) => {
     await pool.query('DELETE FROM paiements WHERE id = $1', [req.params.id]);
     res.sendStatus(200);
 });
-
+// --- API : SAISIE MANUELLE COMPTABILITE ---
+app.post('/api/comptabilite/ecriture', async (req, res) => {
+    const { date_operation, libelle, compte_debit, compte_credit, montant, type_flux } = req.body;
+    try {
+        await pool.query(
+            `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [date_operation, libelle, compte_debit, compte_credit, montant, type_flux]
+        );
+        res.sendStatus(200);
+    } catch (err) {
+        console.error("Erreur écriture comptable:", err);
+        res.status(500).send("Erreur serveur");
+    }
+});
 // --- API : COMPTABILITE GENERALE (Journal, Grand Livre, Balance, Compte de Résultat) ---
 app.get('/api/comptabilite/journal', async (req, res) => {
     const result = await pool.query('SELECT * FROM journal_comptable ORDER BY date_operation DESC, id DESC');
