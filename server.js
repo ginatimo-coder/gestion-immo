@@ -1,5 +1,5 @@
 // --- API : MODIFIER UN LOCATAIRE ---
-app.put('/api/locataires/:id', async (req, res) => {
+app.delete('/api/locataires/:id', async (req, res) => {
     const { id } = req.params;
     const { nom, prenom, email, telephone, date_naissance } = req.body;
     try {
