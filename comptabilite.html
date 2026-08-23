@@ -15,6 +15,7 @@
         .kpi-box { background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .kpi-box h4 { font-size: 12px; color: #64748b; margin-bottom: 5px; }
         .kpi-box p { font-size: 18px; font-weight: bold; color: #0f172a; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     </style>
 </head>
 <body>
@@ -32,19 +33,73 @@
         </aside>
         <main class="main-content">
             <header class="top-header">
-                <h1>Comptabilité Générale & États Financiers</h1>
+                <h1>Comptabilité Générale & Plan Comptable</h1>
             </header>
 
-            <!-- Navigation des onglets comptables -->
+            <!-- Navigation des onglets -->
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('journal')">Journal de Caisse / Banque</button>
+                <button class="tab-btn active" onclick="switchTab('saisie')">Saisie d'écriture</button>
+                <button class="tab-btn" onclick="switchTab('journal')">Journal Général</button>
                 <button class="tab-btn" onclick="switchTab('balance')">Balance Générale</button>
                 <button class="tab-btn" onclick="switchTab('resultat')">Compte de Résultat</button>
             </div>
 
+            <!-- ONGLET 0 : SAISIE D'ÉCRITURE -->
+            <div id="saisie" class="tab-content active">
+                <div class="form-container" style="max-width: 100%;">
+                    <h3>Passer une écriture comptable (Plan Comptable)</h3>
+                    <form id="form-ecriture" onsubmit="ajouterEcriture(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Date de l'opération :</label>
+                                <input type="date" id="date_operation" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Montant ($) :</label>
+                                <input type="number" step="0.01" id="montant" required placeholder="ex: 500">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Libellé / Description :</label>
+                            <input type="text" id="libelle" required placeholder="ex: Règlement loyer appartement A101">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Compte Débit :</label>
+                                <select id="compte_debit" required>
+                                    <option value="531 - Caisse">531 - Caisse</option>
+                                    <option value="521 - Banque">521 - Banque</option>
+                                    <option value="411 - Clients (Locataires)">411 - Clients (Locataires)</option>
+                                    <option value="605 - Entretents et réparations">605 - Entretiens et réparations</option>
+                                    <option value="631 - Frais d'administration">631 - Frais d'administration</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Compte Crédit :</label>
+                                <select id="compte_credit" required>
+                                    <option value="706 - Location de biens immobiliers">706 - Location de biens immobiliers</option>
+                                    <option value="411 - Clients (Locataires)">411 - Clients (Locataires)</option>
+                                    <option value="531 - Caisse">531 - Caisse</option>
+                                    <option value="758 - Produits divers">758 - Produits divers</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Type de Flux :</label>
+                            <select id="type_flux">
+                                <option value="Encaissement">Encaissement</option>
+                                <option value="Decaissement">Décaissement</option>
+                                <option value="Opération diverse">Opération diverse</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Enregistrer l'écriture</button>
+                    </form>
+                </div>
+            </div>
+
             <!-- ONGLET 1 : JOURNAL -->
-            <div id="journal" class="tab-content active">
-                <div class="card">
+            <div id="journal" class="tab-content">
+                <div class="card" style="max-width: 100%;">
                     <h3>Journal des Écritures</h3>
                     <table>
                         <thead>
@@ -57,7 +112,7 @@
 
             <!-- ONGLET 2 : BALANCE -->
             <div id="balance" class="tab-content">
-                <div class="card">
+                <div class="card" style="max-width: 100%;">
                     <h3>Balance Générale des Comptes</h3>
                     <table>
                         <thead>
@@ -71,13 +126,13 @@
             <!-- ONGLET 3 : COMPTE DE RESULTAT -->
             <div id="resultat" class="tab-content">
                 <div class="kpi-row">
-                    <div class="kpi-box"><h4>Total Produits (Revenus)</h4><p id="res-produits" style="color: #16a34a;">0 $</p></div>
-                    <div class="kpi-box"><h4>Total Charges</h4><p id="res-charges" style="color: #dc2626;">0 $</p></div>
+                    <div class="kpi-box"><h4>Total Produits (Classe 7)</h4><p id="res-produits" style="color: #16a34a;">0 $</p></div>
+                    <div class="kpi-box"><h4>Total Charges (Classe 6)</h4><p id="res-charges" style="color: #dc2626;">0 $</p></div>
                     <div class="kpi-box"><h4>Résultat Net (Bénéfice)</h4><p id="res-net" style="color: #0284c7;">0 $</p></div>
                 </div>
-                <div class="card">
+                <div class="card" style="max-width: 100%;">
                     <h3>Synthèse du Compte de Résultat</h3>
-                    <p style="color: #64748b; line-height: 1.6;">Le compte de résultat récapitule les produits et les charges de l'exercice. Un solde positif indique un bénéfice net d'exploitation pour votre parc immobilier.</p>
+                    <p style="color: #64748b; line-height: 1.6;">Ce compte de résultat synthétise les produits de location et les charges d'exploitation de votre parc immobilier selon les principes comptables standard.</p>
                 </div>
             </div>
         </main>
@@ -91,48 +146,79 @@
             event.currentTarget.classList.add('active');
         }
 
-        // Charger les données du Journal et de la Synthèse
-        fetch('/api/comptabilite/journal')
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.getElementById('journal-list');
-                if(data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Aucune écriture comptable enregistrée.</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = data.map(j => `
-                    <tr>
-                        <td>${j.date_operation?.substring(0,10)}</td>
-                        <td>${j.libelle}</td>
-                        <td>${j.compte_debit}</td>
-                        <td>${j.compte_credit}</td>
-                        <td><strong>${j.montant} $</strong></td>
-                        <td><span class="badge badge-success">${j.type_flux}</span></td>
-                    </tr>
-                `).join('');
-            });
+        // Soumission d'une nouvelle écriture comptable
+        function ajouterEcriture(e) {
+            e.preventDefault();
+            const data = {
+                date_operation: document.getElementById('date_operation').value,
+                montant: document.getElementById('montant').value,
+                libelle: document.getElementById('libelle').value,
+                compte_debit: document.getElementById('compte_debit').value,
+                compte_credit: document.getElementById('compte_credit').value,
+                type_flux: document.getElementById('type_flux').value
+            };
 
-        fetch('/api/comptabilite/synthese')
-            .then(res => res.json())
-            .then(data => {
-                // Balance
-                const bTbody = document.getElementById('balance-list');
-                const comptes = data.comptes;
-                if(Object.keys(comptes).length === 0) {
-                    bTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Aucun mouvement en balance.</td></tr>';
+            fetch('/api/comptabilite/ecriture', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(res => {
+                if(res.ok) {
+                    alert("Écriture comptable enregistrée avec succès !");
+                    document.getElementById('form-ecriture').reset();
+                    chargerComptabilite();
+                    switchTab('journal');
                 } else {
-                    bTbody.innerHTML = Object.keys(comptes).map(compte => {
-                        const c = comptes[compte];
-                        const solde = c.debit - c.credit;
-                        return `<tr><td>${compte}</td><td>${c.debit} $</td><td>${c.credit} $</td><td><strong>${solde} $</strong></td></tr>`;
-                    }).join('');
+                    alert("Erreur lors de l'enregistrement.");
                 }
-
-                // Compte de résultat
-                document.getElementById('res-produits').innerText = data.totalProduits.toLocaleString() + ' $';
-                document.getElementById('res-charges').innerText = data.totalCharges.toLocaleString() + ' $';
-                document.getElementById('res-net').innerText = data.resultatNet.toLocaleString() + ' $';
             });
+        }
+
+        function chargerComptabilite() {
+            // Journal
+            fetch('/api/comptabilite/journal')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('journal-list');
+                    if(data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Aucune écriture comptable enregistrée.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = data.map(j => `
+                        <tr>
+                            <td>${j.date_operation?.substring(0,10)}</td>
+                            <td>${j.libelle}</td>
+                            <td>${j.compte_debit}</td>
+                            <td>${j.compte_credit}</td>
+                            <td><strong>${j.montant} $</strong></td>
+                            <td><span class="badge badge-success">${j.type_flux}</span></td>
+                        </tr>
+                    `).join('');
+                });
+
+            // Synthèse (Balance & Résultat)
+            fetch('/api/comptabilite/synthese')
+                .then(res => res.json())
+                .then(data => {
+                    const bTbody = document.getElementById('balance-list');
+                    const comptes = data.comptes;
+                    if(Object.keys(comptes).length === 0) {
+                        bTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Aucun mouvement en balance.</td></tr>';
+                    } else {
+                        bTbody.innerHTML = Object.keys(comptes).map(compte => {
+                            const c = comptes[compte];
+                            const solde = c.debit - c.credit;
+                            return `<tr><td>${compte}</td><td>${c.debit} $</td><td>${c.credit} $</td><td><strong>${solde} $</strong></td></tr>`;
+                        }).join('');
+                    }
+
+                    document.getElementById('res-produits').innerText = data.totalProduits.toLocaleString() + ' $';
+                    document.getElementById('res-charges').innerText = data.totalCharges.toLocaleString() + ' $';
+                    document.getElementById('res-net').innerText = data.resultatNet.toLocaleString() + ' $';
+                });
+        }
+
+        chargerComptabilite();
     </script>
 </body>
 </html>
