@@ -6,6 +6,12 @@
     <title>Gestion des Locataires - ImmoGérer</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .btn-action { padding: 5px 10px; margin-right: 5px; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        .btn-edit { background-color: #3498db; }
+        .btn-delete { background-color: #e74c3c; }
+        .btn-save { background-color: #2ecc71; }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -26,7 +32,7 @@
                 <a href="/nouveau-locataire" class="btn-primary"><i class="fa-solid fa-plus"></i> Ajouter un locataire</a>
             </header>
 
-            <section class="card" style="margin-top: 20px;">
+            <section class="card" style="margin-top: 20px; overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
@@ -35,10 +41,11 @@
                             <th>Email</th>
                             <th>Téléphone</th>
                             <th>Date de naissance</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="locataires-list">
-                        <!-- Les données seront injectées ici par JavaScript -->
+                        <!-- Chargé dynamiquement -->
                     </tbody>
                 </table>
             </section>
@@ -46,29 +53,89 @@
     </div>
 
     <script>
-        // Charger dynamiquement les locataires depuis le serveur
-        fetch('/api/locataires')
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('locataires-list');
-                tbody.innerHTML = '';
-                if(data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Aucun locataire enregistré pour le moment.</td></tr>';
-                    return;
-                }
-                data.forEach(l => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${l.nom || ''}</td>
-                        <td>${l.prenom || ''}</td>
-                        <td>${l.email || ''}</td>
-                        <td>${l.telephone || ''}</td>
-                        <td>${l.date_naissance ? l.date_naissance.substring(0, 10) : ''}</td>
-                    `;
-                    tbody.appendChild(tr);
+        // Charger la liste des locataires
+        function chargerLocataires() {
+            fetch('/api/locataires')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('locataires-list');
+                    tbody.innerHTML = '';
+                    if(data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Aucun locataire enregistré.</td></tr>';
+                        return;
+                    }
+                    data.forEach(l => {
+                        const tr = document.createElement('tr');
+                        tr.setAttribute('data-id', l.id);
+                        tr.innerHTML = `
+                            <td class="editable" data-field="nom">${l.nom || ''}</td>
+                            <td class="editable" data-field="prenom">${l.prenom || ''}</td>
+                            <td class="editable" data-field="email">${l.email || ''}</td>
+                            <td class="editable" data-field="telephone">${l.telephone || ''}</td>
+                            <td class="editable" data-field="date_naissance">${l.date_naissance ? l.date_naissance.substring(0, 10) : ''}</td>
+                            <td>
+                                <button class="btn-action btn-edit" onclick="activerEdition(${l.id}, this)">Modifier</button>
+                                <button class="btn-action btn-delete" onclick="supprimerLocataire(${l.id})">Supprimer</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => console.error("Erreur :", err));
+        }
+
+        // Rendre la ligne éditable au clic sur "Modifier"
+        function activerEdition(id, btn) {
+            const tr = btn.closest('tr');
+            const editables = tr.querySelectorAll('.editable');
+            
+            if (btn.innerText === "Modifier") {
+                editables.forEach(td => {
+                    const val = td.innerText;
+                    td.innerHTML = `<input type="text" value="${val}" style="width: 100%; padding: 4px;">`;
                 });
-            })
-            .catch(err => console.error("Erreur de chargement", err));
+                btn.innerText = "Enregistrer";
+                btn.className = "btn-action btn-save";
+            } else {
+                const updatedData = {};
+                editables.forEach(td => {
+                    const input = td.querySelector('input');
+                    const field = td.getAttribute('data-field');
+                    updatedData[field] = input.value;
+                });
+
+                fetch(`/api/locataires/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                })
+                .then(res => {
+                    if(res.ok) {
+                        chargerLocataires();
+                    } else {
+                        alert("Erreur lors de la modification");
+                    }
+                })
+                .catch(err => console.error("Erreur :", err));
+            }
+        }
+
+        // Supprimer un locataire
+        function supprimerLocataire(id) {
+            if(confirm("Voulez-vous vraiment supprimer ce locataire ?")) {
+                fetch(`/api/locataires/${id}`, { method: 'DELETE' })
+                    .then(res => {
+                        if(res.ok) {
+                            chargerLocataires();
+                        } else {
+                            alert("Erreur lors de la suppression");
+                        }
+                    })
+                    .catch(err => console.error("Erreur :", err));
+            }
+        }
+
+        chargerLocataires();
     </script>
 </body>
 </html>
