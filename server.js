@@ -15,7 +15,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Création automatique de la table locataires au démarrage
+// Création automatique des tables au démarrage
 pool.query(`
     CREATE TABLE IF NOT EXISTS locataires (
         id SERIAL PRIMARY KEY,
@@ -25,10 +25,18 @@ pool.query(`
         telephone VARCHAR(50),
         date_naissance DATE
     );
+
+    CREATE TABLE IF NOT EXISTS biens (
+        id SERIAL PRIMARY KEY,
+        nom_bien VARCHAR(150),
+        type VARCHAR(50),
+        loyer NUMERIC,
+        statut VARCHAR(50) DEFAULT 'Libre'
+    );
 `).then(() => {
-    console.log("Table 'locataires' vérifiée ou créée avec succès.");
+    console.log("Tables 'locataires' et 'biens' vérifiées ou créées avec succès.");
 }).catch(err => {
-    console.error("Erreur création table :", err);
+    console.error("Erreur création tables :", err);
 });
 
 // --- ROUTES PAGES ---
@@ -44,7 +52,11 @@ app.get('/locataires', (req, res) => {
     res.sendFile(path.join(__dirname, 'locataires.html'));
 });
 
-// --- API : LISTER ---
+app.get('/biens', (req, res) => {
+    res.sendFile(path.join(__dirname, 'biens.html'));
+});
+
+// --- API : LOCATAIRES ---
 app.get('/api/locataires', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM locataires ORDER BY id DESC');
@@ -55,7 +67,6 @@ app.get('/api/locataires', async (req, res) => {
     }
 });
 
-// --- API : AJOUTER ---
 app.post('/api/locataires', async (req, res) => {
     const { nom, prenom, email, telephone, date_naissance } = req.body;
     try {
@@ -71,7 +82,6 @@ app.post('/api/locataires', async (req, res) => {
     }
 });
 
-// --- API : MODIFIER ---
 app.put('/api/locataires/:id', async (req, res) => {
     const { id } = req.params;
     const { nom, prenom, email, telephone, date_naissance } = req.body;
@@ -89,7 +99,6 @@ app.put('/api/locataires/:id', async (req, res) => {
     }
 });
 
-// --- API : SUPPRIMER ---
 app.delete('/api/locataires/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -97,6 +106,43 @@ app.delete('/api/locataires/:id', async (req, res) => {
         res.sendStatus(200);
     } catch (err) {
         console.error("Erreur suppression :", err);
+        res.status(500).send("Erreur serveur.");
+    }
+});
+
+// --- API : BIENS ---
+app.get('/api/biens', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM biens ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Erreur lecture biens :", err);
+        res.status(500).send("Erreur serveur.");
+    }
+});
+
+app.post('/api/biens', async (req, res) => {
+    const { nom_bien, type, loyer, statut } = req.body;
+    try {
+        const query = `
+            INSERT INTO biens (nom_bien, type, loyer, statut) 
+            VALUES ($1, $2, $3, $4);
+        `;
+        await pool.query(query, [nom_bien, type, loyer, statut || 'Libre']);
+        res.redirect('/biens');
+    } catch (err) {
+        console.error("Erreur insertion bien :", err);
+        res.status(500).send("Erreur serveur.");
+    }
+});
+
+app.delete('/api/biens/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM biens WHERE id = $1;', [id]);
+        res.sendStatus(200);
+    } catch (err) {
+        console.error("Erreur suppression bien :", err);
         res.status(500).send("Erreur serveur.");
     }
 });
