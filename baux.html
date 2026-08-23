@@ -5,13 +5,6 @@
     <title>Gestion des Baux - ImmoGérer</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .form-container { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; max-width: 600px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group select, .form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-    </style>
 </head>
 <body>
     <div class="app-container">
@@ -28,8 +21,8 @@
         <main class="main-content">
             <header><h1>Gestion des Contrats de Bail</h1></header>
             <div class="form-container">
-                <h3>Créer un nouveau bail</h3>
-                <form action="/api/baux" method="POST">
+                <h3>Établir un nouveau bail</h3>
+                <form action="/api/baux" method="POST" enctype="multipart/form-data">
                     <div class="form-group">
                         <label>Locataire :</label>
                         <select name="locataire_id" id="select-locataire" required><option value="">Chargement...</option></select>
@@ -46,14 +39,18 @@
                         <label>Date de fin :</label>
                         <input type="date" name="date_fin">
                     </div>
-                    <button type="submit" class="btn-primary" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Établir le bail</button>
+                    <div class="form-group">
+                        <label>Uploader le contrat (PDF / Image) :</label>
+                        <input type="file" name="contrat_fichier">
+                    </div>
+                    <button type="submit" class="btn-primary">Enregistrer le bail</button>
                 </form>
             </div>
-            <section class="card" style="overflow-x: auto;">
+            <section class="card" style="max-width: 100%; overflow-x: auto;">
                 <h3>Liste des Baux Actifs</h3>
                 <table>
                     <thead>
-                        <tr><th>Locataire</th><th>Bien</th><th>Début</th><th>Fin</th><th>Actions</th></tr>
+                        <tr><th>Locataire</th><th>Bien</th><th>Début</th><th>Fin</th><th>Contrat</th><th>Actions</th></tr>
                     </thead>
                     <tbody id="baux-list"></tbody>
                 </table>
@@ -62,18 +59,23 @@
     </div>
     <script>
         fetch('/api/locataires').then(res => res.json()).then(data => {
-            const sel = document.getElementById('select-locataire');
-            sel.innerHTML = data.map(l => `<option value="${l.id}">${l.nom} ${l.prenom}</option>`).join('');
+            document.getElementById('select-locataire').innerHTML = data.map(l => `<option value="${l.id}">${l.nom} ${l.prenom}</option>`).join('');
         });
         fetch('/api/biens').then(res => res.json()).then(data => {
-            const sel = document.getElementById('select-bien');
-            sel.innerHTML = data.filter(b => b.statut === 'Libre').map(b => `<option value="${b.id}">${b.nom_bien} (${b.loyer}$)</option>`).join('');
+            document.getElementById('select-bien').innerHTML = data.filter(b => b.statut === 'Libre').map(b => `<option value="${b.id}">${b.nom_bien} (${b.loyer}$)</option>`).join('');
         });
         function chargerBaux() {
             fetch('/api/baux').then(res => res.json()).then(data => {
                 const tbody = document.getElementById('baux-list');
-                tbody.innerHTML = data.length === 0 ? '<tr><td colspan="5" style="text-align:center;">Aucun bail enregistré.</td></tr>' : 
-                    data.map(b => `<tr><td>${b.locataire_nom} ${b.locataire_prenom}</td><td>${b.nom_bien}</td><td>${b.date_debut?.substring(0,10)}</td><td>${b.date_fin?.substring(0,10) || 'Indéterminée'}</td><td><button class="btn-delete" onclick="supprimerBail(${b.id})">Supprimer</button></td></tr>`).join('');
+                tbody.innerHTML = data.length === 0 ? '<tr><td colspan="6" style="text-align:center;">Aucun bail enregistré.</td></tr>' : 
+                    data.map(b => `<tr>
+                        <td>${b.locataire_nom} ${b.locataire_prenom}</td>
+                        <td>${b.nom_bien}</td>
+                        <td>${b.date_debut?.substring(0,10)}</td>
+                        <td>${b.date_fin?.substring(0,10) || 'Indéterminée'}</td>
+                        <td>${b.contrat_url ? `<a href="${b.contrat_url}" target="_blank" style="color: #0ea5e9; font-weight:600;"><i class="fa-solid fa-file-arrow-down"></i> Voir</a>` : 'Aucun'}</td>
+                        <td><button class="btn-action btn-delete" onclick="supprimerBail(${b.id})">Supprimer</button></td>
+                    </tr>`).join('');
             });
         }
         function supprimerBail(id) {
