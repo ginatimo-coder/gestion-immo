@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Locataires - ImmoGérer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Barre latérale -->
+        <aside class="sidebar">
+            <h2>ImmoGérer</h2>
+            <ul>
+                <li><a href="/"><i class="fa-solid fa-house"></i> Tableau de bord</a></li>
+                <li><a href="/locataires" class="active"><i class="fa-solid fa-users"></i> Locataires</a></li>
+                <li><a href="/nouveau-locataire"><i class="fa-solid fa-user-plus"></i> Nouveau Locataire</a></li>
+            </ul>
+        </aside>
+
+        <!-- Contenu principal -->
+        <main class="main-content">
+            <header>
+                <h1>Liste des Locataires</h1>
+                <a href="/nouveau-locataire" class="btn-primary"><i class="fa-solid fa-plus"></i> Ajouter un locataire</a>
+            </header>
+
+            <section class="card" style="margin-top: 20px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Email</th>
+                            <th>Téléphone</th>
+                            <th>Date de naissance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="locataires-list">
+                        <!-- Les données seront injectées ici par JavaScript -->
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Charger dynamiquement les locataires depuis le serveur
+        fetch('/api/locataires')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('locataires-list');
+                tbody.innerHTML = '';
+                if(data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Aucun locataire enregistré pour le moment.</td></tr>';
+                    return;
+                }
+                data.forEach(l => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${l.nom || ''}</td>
+                        <td>${l.prenom || ''}</td>
+                        <td>${l.email || ''}</td>
+                        <td>${l.telephone || ''}</td>
+                        <td>${l.date_naissance ? l.date_naissance.substring(0, 10) : ''}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => console.error("Erreur de chargement", err));
+    </script>
+</body>
+</html>
