@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion - ImmoGérer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .login-card h2 {
+            color: #0284c7;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2><i class="fa-solid fa-building-shield"></i> ImmoGérer</h2>
+        <p style="color: #64748b; margin-bottom: 20px; font-size: 13px;">Espace sécurisé de gestion immobilière</p>
+        <form action="/api/login" method="POST">
+            <div class="form-group" style="text-align: left;">
+                <label>Mot de passe administrateur :</label>
+                <input type="password" name="password" required placeholder="Entrez votre mot de passe">
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Se connecter</button>
+        </form>
+    </div>
+</body>
+</html>
