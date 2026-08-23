@@ -140,6 +140,9 @@
                 `).join('');
             }
         }).catch(err => console.error("Erreur chargement dashboard:", err));
+        console.warn("Session expirée ou non connecté, redirection vers le login...");
+            window.location.href = '/login';
+        });
     </script>
 </body>
 </html>
