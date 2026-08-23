@@ -128,6 +128,16 @@
             </div>
         </section>
     </main>
-
+<script>
+    fetch('/api/locataires')
+        .then(res => res.json())
+        .then(data => {
+            const compteur = document.getElementById('nb-locataires');
+            if (compteur) {
+                compteur.innerText = data.length;
+            }
+        })
+        .catch(err => console.error("Erreur chargement stats :", err));
+</script>
 </body>
 </html>
