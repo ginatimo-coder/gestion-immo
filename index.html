@@ -101,7 +101,7 @@
         </main>
     </div>
 
-    <script>
+   <script>
         // Chargement dynamique des statistiques globales du dashboard
         Promise.all([
             fetch('/api/locataires').then(res => res.json()),
@@ -140,8 +140,8 @@
                     </tr>
                 `).join('');
             }
-        }).catch(err => console.error("Erreur chargement dashboard:", err));
-        console.warn("Session expirée ou non connecté, redirection vers le login...");
+        }).catch(err => {
+            console.warn("Session expirée ou non connecté, redirection vers le login...");
             window.location.href = '/login';
         });
     </script>
