@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Comptabilité Générale - ImmoGérer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: #475569; }
+        .tab-btn.active { background: #0284c7; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .kpi-box { background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .kpi-box h4 { font-size: 12px; color: #64748b; margin-bottom: 5px; }
+        .kpi-box p { font-size: 18px; font-weight: bold; color: #0f172a; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand"><i class="fa-solid fa-building-shield"></i><h2>ImmoGérer</h2></div>
+            <ul>
+                <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+                <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
+                <li><a href="/biens"><i class="fa-solid fa-city"></i> Biens immobiliers</a></li>
+                <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+                <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+                <li><a href="/comptabilite" class="active"><i class="fa-solid fa-calculator"></i> Comptabilité Générale</a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <header class="top-header">
+                <h1>Comptabilité Générale & États Financiers</h1>
+            </header>
+
+            <!-- Navigation des onglets comptables -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('journal')">Journal de Caisse / Banque</button>
+                <button class="tab-btn" onclick="switchTab('balance')">Balance Générale</button>
+                <button class="tab-btn" onclick="switchTab('resultat')">Compte de Résultat</button>
+            </div>
+
+            <!-- ONGLET 1 : JOURNAL -->
+            <div id="journal" class="tab-content active">
+                <div class="card">
+                    <h3>Journal des Écritures</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Date</th><th>Libellé</th><th>Compte Débit</th><th>Compte Crédit</th><th>Montant</th><th>Type</th></tr>
+                        </thead>
+                        <tbody id="journal-list"><tr><td colspan="6" style="text-align:center;">Chargement...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ONGLET 2 : BALANCE -->
+            <div id="balance" class="tab-content">
+                <div class="card">
+                    <h3>Balance Générale des Comptes</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Compte</th><th>Total Débit</th><th>Total Crédit</th><th>Solde Net</th></tr>
+                        </thead>
+                        <tbody id="balance-list"><tr><td colspan="4" style="text-align:center;">Chargement...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ONGLET 3 : COMPTE DE RESULTAT -->
+            <div id="resultat" class="tab-content">
+                <div class="kpi-row">
+                    <div class="kpi-box"><h4>Total Produits (Revenus)</h4><p id="res-produits" style="color: #16a34a;">0 $</p></div>
+                    <div class="kpi-box"><h4>Total Charges</h4><p id="res-charges" style="color: #dc2626;">0 $</p></div>
+                    <div class="kpi-box"><h4>Résultat Net (Bénéfice)</h4><p id="res-net" style="color: #0284c7;">0 $</p></div>
+                </div>
+                <div class="card">
+                    <h3>Synthèse du Compte de Résultat</h3>
+                    <p style="color: #64748b; line-height: 1.6;">Le compte de résultat récapitule les produits et les charges de l'exercice. Un solde positif indique un bénéfice net d'exploitation pour votre parc immobilier.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // Charger les données du Journal et de la Synthèse
+        fetch('/api/comptabilite/journal')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('journal-list');
+                if(data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Aucune écriture comptable enregistrée.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.map(j => `
+                    <tr>
+                        <td>${j.date_operation?.substring(0,10)}</td>
+                        <td>${j.libelle}</td>
+                        <td>${j.compte_debit}</td>
+                        <td>${j.compte_credit}</td>
+                        <td><strong>${j.montant} $</strong></td>
+                        <td><span class="badge badge-success">${j.type_flux}</span></td>
+                    </tr>
+                `).join('');
+            });
+
+        fetch('/api/comptabilite/synthese')
+            .then(res => res.json())
+            .then(data => {
+                // Balance
+                const bTbody = document.getElementById('balance-list');
+                const comptes = data.comptes;
+                if(Object.keys(comptes).length === 0) {
+                    bTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Aucun mouvement en balance.</td></tr>';
+                } else {
+                    bTbody.innerHTML = Object.keys(comptes).map(compte => {
+                        const c = comptes[compte];
+                        const solde = c.debit - c.credit;
+                        return `<tr><td>${compte}</td><td>${c.debit} $</td><td>${c.credit} $</td><td><strong>${solde} $</strong></td></tr>`;
+                    }).join('');
+                }
+
+                // Compte de résultat
+                document.getElementById('res-produits').innerText = data.totalProduits.toLocaleString() + ' $';
+                document.getElementById('res-charges').innerText = data.totalCharges.toLocaleString() + ' $';
+                document.getElementById('res-net').innerText = data.resultatNet.toLocaleString() + ' $';
+            });
+    </script>
+</body>
+</html>
