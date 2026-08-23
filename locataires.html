@@ -86,7 +86,7 @@
         </main>
     </div>
 
-    <script>
+  <script>
         function toggleFormulaire() {
             const form = document.getElementById('form-container');
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
@@ -113,6 +113,9 @@
                             </td>
                         </tr>
                     `).join('');
+                }).catch(err => {
+                    console.warn("Session expirée, redirection vers le login...");
+                    window.location.href = '/login';
                 });
         }
 
@@ -124,9 +127,6 @@
         }
 
         chargerLocataires();
-        console.warn("Session expirée ou non connecté, redirection vers le login...");
-            window.location.href = '/login';
-        });
     </script>
 </body>
 </html>
