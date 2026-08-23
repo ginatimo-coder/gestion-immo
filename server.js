@@ -5,19 +5,32 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Fichiers statiques
 app.use(express.static(path.join(__dirname)));
 
-// Connexion PostgreSQL
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
+// Création automatique de la table au démarrage pour éviter l'erreur 500
+pool.query(`
+    CREATE TABLE IF NOT EXISTS locataires (
+        id SERIAL PRIMARY KEY,
+        nom VARCHAR(100),
+        prenom VARCHAR(100),
+        email VARCHAR(100),
+        telephone VARCHAR(50),
+        date_naissance DATE
+    );
+`).then(() => {
+    console.log("Table 'locataires' vérifiée/créée avec succès.");
+}).catch(err => {
+    console.error("Erreur lors de la création de la table :", err);
+});
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// --- ROUTES PAGES ---
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -30,7 +43,6 @@ app.get('/locataires', (req, res) => {
     res.sendFile(path.join(__dirname, 'locataires.html'));
 });
 
-// --- API : LISTER LES LOCATAIRES ---
 app.get('/api/locataires', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM locataires ORDER BY id DESC');
@@ -41,7 +53,6 @@ app.get('/api/locataires', async (req, res) => {
     }
 });
 
-// --- API : AJOUTER UN LOCATAIRE ---
 app.post('/api/locataires', async (req, res) => {
     const { nom, prenom, email, telephone, date_naissance } = req.body;
     try {
@@ -57,7 +68,6 @@ app.post('/api/locataires', async (req, res) => {
     }
 });
 
-// --- API : MODIFIER UN LOCATAIRE ---
 app.put('/api/locataires/:id', async (req, res) => {
     const { id } = req.params;
     const { nom, prenom, email, telephone, date_naissance } = req.body;
@@ -75,7 +85,6 @@ app.put('/api/locataires/:id', async (req, res) => {
     }
 });
 
-// --- API : SUPPRIMER UN LOCATAIRE ---
 app.delete('/api/locataires/:id', async (req, res) => {
     const { id } = req.params;
     try {
