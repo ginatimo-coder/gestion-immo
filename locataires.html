@@ -45,7 +45,7 @@
                         </tr>
                     </thead>
                     <tbody id="locataires-list">
-                        <!-- Chargé dynamiquement -->
+                        <!-- Données chargées dynamiquement -->
                     </tbody>
                 </table>
             </section>
@@ -53,7 +53,7 @@
     </div>
 
     <script>
-        // Charger la liste des locataires
+        // Charger la liste des locataires depuis l'API
         function chargerLocataires() {
             fetch('/api/locataires')
                 .then(res => res.json())
@@ -81,10 +81,10 @@
                         tbody.appendChild(tr);
                     });
                 })
-                .catch(err => console.error("Erreur :", err));
+                .catch(err => console.error("Erreur de chargement :", err));
         }
 
-        // Rendre la ligne éditable au clic sur "Modifier"
+        // Rendre la ligne éditable et enregistrer les modifications
         function activerEdition(id, btn) {
             const tr = btn.closest('tr');
             const editables = tr.querySelectorAll('.editable');
@@ -135,6 +135,7 @@
             }
         }
 
+        // Lancer le chargement au démarrage
         chargerLocataires();
     </script>
 </body>
