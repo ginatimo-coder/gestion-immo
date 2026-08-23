@@ -5,13 +5,6 @@
     <title>Gestion des Paiements - ImmoGérer</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .form-container { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; max-width: 600px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group select, .form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-    </style>
 </head>
 <body>
     <div class="app-container">
@@ -54,10 +47,10 @@
                             <option value="En retard">En retard</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn-primary" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Enregistrer le paiement</button>
+                    <button type="submit" class="btn-primary">Enregistrer le paiement</button>
                 </form>
             </div>
-            <section class="card" style="overflow-x: auto;">
+            <section class="card" style="max-width: 100%; overflow-x: auto;">
                 <h3>Historique des Paiements</h3>
                 <table>
                     <thead>
@@ -70,25 +63,77 @@
     </div>
     <script>
         fetch('/api/locataires').then(res => res.json()).then(data => {
-            const sel = document.getElementById('select-locataire');
-            sel.innerHTML = data.map(l => `<option value="${l.id}">${l.nom} ${l.prenom}</option>`).join('');
+            document.getElementById('select-locataire').innerHTML = data.map(l => `<option value="${l.id}">${l.nom} ${l.prenom}</option>`).join('');
         });
         fetch('/api/biens').then(res => res.json()).then(data => {
-            const sel = document.getElementById('select-bien');
-            sel.innerHTML = data.map(b => `<option value="${b.id}">${b.nom_bien}</option>`).join('');
+            document.getElementById('select-bien').innerHTML = data.map(b => `<option value="${b.id}">${b.nom_bien}</option>`).join('');
         });
+
         function chargerPaiements() {
             fetch('/api/paiements').then(res => res.json()).then(data => {
                 const tbody = document.getElementById('paiements-list');
                 tbody.innerHTML = data.length === 0 ? '<tr><td colspan="6" style="text-align:center;">Aucun paiement enregistré.</td></tr>' : 
-                    data.map(p => `<tr><td>${p.locataire_nom} ${p.locataire_prenom}</td><td>${p.nom_bien}</td><td>${p.date_paiement?.substring(0,10)}</td><td>${p.montant} $</td><td><span style="padding: 3px 8px; border-radius: 4px; background: ${p.statut === 'Payé' ? '#d4edda' : '#fff3cd'};">${p.statut}</span></td><td><button class="btn-delete" onclick="supprimerPaiement(${p.id})">Supprimer</button></td></tr>`).join('');
+                    data.map(p => `<tr data-id="${p.id}">
+                        <td class="editable" data-field="locataire_nom">${p.locataire_nom} ${p.locataire_prenom}</td>
+                        <td class="editable" data-field="nom_bien">${p.nom_bien}</td>
+                        <td class="editable" data-field="date_paiement">${p.date_paiement?.substring(0,10)}</td>
+                        <td class="editable" data-field="montant">${p.montant} $</td>
+                        <td><span style="padding: 3px 8px; border-radius: 4px; background: ${p.statut === 'Payé' ? '#d1fae5' : '#fef3c7'}; color: ${p.statut === 'Payé' ? '#065f46' : '#92400e'};">${p.statut}</span></td>
+                        <td>
+                            <button class="btn-action btn-receipt" onclick="genererReçu(${p.montant}, '${p.locataire_nom} ${p.locataire_prenom}', '${p.nom_bien}', '${p.date_paiement?.substring(0,10)}')">Reçu</button>
+                            <button class="btn-action btn-edit" onclick="modifierPaiement(${p.id}, this)">Modifier</button>
+                            <button class="btn-action btn-delete" onclick="supprimerPaiement(${p.id})">Supprimer</button>
+                        </td>
+                    </tr>`).join('');
             });
         }
+
+        function genererReçu(montant, locataire, bien, date) {
+            const win = window.open('', '_blank');
+            win.document.write(`
+                <html><head><title>Reçu de Paiement</title>
+                <style>body{font-family:Arial;padding:30px;max-width:600px;margin:auto;border:1px solid #ccc;border-radius:8px;}
+                h2{color:#0ea5e9;text-align:center;}</style></head>
+                <body>
+                    <h2>REÇU DE PAIEMENT - ImmoGérer</h2>
+                    <hr>
+                    <p><strong>Date :</strong> ${date}</p>
+                    <p><strong>Locataire :</strong> ${locataire}</p>
+                    <p><strong>Bien concerné :</strong> ${bien}</p>
+                    <p><strong>Montant payé :</strong> ${montant} $</p>
+                    <p><strong>Statut :</strong> Payé en totalité</p>
+                    <br><br><p style="text-align:right;">Signature / Cachet</p>
+                </body></html>
+            `);
+            win.document.close();
+            win.print();
+        }
+
+        function modifierPaiement(id, btn) {
+            const tr = btn.closest('tr');
+            const montantTd = tr.children[3];
+            if(btn.innerText === "Modifier") {
+                const val = montantTd.innerText.replace(' $', '');
+                montantTd.innerHTML = `<input type="number" value="${val}" style="width: 80px; padding:4px;">`;
+                btn.innerText = "Enregistrer";
+                btn.className = "btn-action btn-primary";
+            } else {
+                const input = montantTd.querySelector('input');
+                const nouveauMontant = input.value;
+                fetch(`/api/paiements/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ montant: nouveauMontant })
+                }).then(res => { if(res.ok) chargerPaiements(); else alert("Erreur modification"); });
+            }
+        }
+
         function supprimerPaiement(id) {
             if(confirm("Voulez-vous supprimer ce paiement ?")) {
                 fetch(`/api/paiements/${id}`, { method: 'DELETE' }).then(() => chargerPaiements());
             }
         }
+
         chargerPaiements();
     </script>
 </body>
