@@ -2,43 +2,70 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Locataires - ImmoGérer</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .btn-action { padding: 5px 10px; margin-right: 5px; border: none; border-radius: 4px; cursor: pointer; color: white; }
-        .btn-edit { background-color: #3498db; }
-        .btn-delete { background-color: #e74c3c; }
-        .btn-save { background-color: #2ecc71; }
-    </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Barre latérale -->
-      <aside class="sidebar">
-    <div class="brand">
-        <i class="fa-solid fa-building-shield"></i>
-        <h2>ImmoGérer</h2>
-    </div>
-    <ul>
-        <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
-        <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
-        <li><a href="/biens"><i class="fa-solid fa-city"></i> Biens immobiliers</a></li>
-        <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
-        <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-        <li><a href="/comptabilite"><i class="fa-solid fa-calculator"></i> Comptabilité Générale</a></li>
-    </ul>
-</aside>
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-building-shield"></i>
+                <h2>ImmoGérer</h2>
+            </div>
+            <ul>
+                <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+                <li><a href="/locataires" class="active"><i class="fa-solid fa-users"></i> Locataires</a></li>
+                <li><a href="/biens"><i class="fa-solid fa-city"></i> Biens immobiliers</a></li>
+                <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+                <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+                <li><a href="/comptabilite"><i class="fa-solid fa-calculator"></i> Comptabilité Générale</a></li>
+            </ul>
+        </aside>
 
-        <!-- Contenu principal -->
         <main class="main-content">
-            <header>
-                <h1>Liste des Locataires</h1>
-                <a href="/nouveau-locataire" class="btn-primary"><i class="fa-solid fa-plus"></i> Ajouter un locataire</a>
+            <header class="top-header">
+                <h1>Gestion des Locataires</h1>
+                <button onclick="toggleFormulaire()" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <i class="fa-solid fa-user-plus"></i> Ajouter un locataire
+                </button>
             </header>
 
-            <section class="card" style="margin-top: 20px; overflow-x: auto;">
+            <!-- Formulaire d'ajout (caché par défaut, s'affiche au clic) -->
+            <div id="form-container" class="form-container" style="display: none; margin-bottom: 25px;">
+                <h3>Nouveau Locataire</h3>
+                <form action="/api/locataires" method="POST">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Nom :</label>
+                            <input type="text" name="nom" required placeholder="Nom de famille">
+                        </div>
+                        <div class="form-group">
+                            <label>Prénom :</label>
+                            <input type="text" name="prenom" required placeholder="Prénom">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Email :</label>
+                            <input type="email" name="email" placeholder="adresse@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Téléphone :</label>
+                            <input type="text" name="telephone" placeholder="+243...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Date de naissance :</label>
+                        <input type="date" name="date_naissance">
+                    </div>
+                    <button type="submit" class="btn-primary">Enregistrer le locataire</button>
+                </form>
+            </div>
+
+            <!-- Tableau des locataires -->
+            <section class="card" style="max-width: 100%; overflow-x: auto;">
+                <h3>Liste des Locataires Enregistrés</h3>
                 <table>
                     <thead>
                         <tr>
@@ -51,7 +78,7 @@
                         </tr>
                     </thead>
                     <tbody id="locataires-list">
-                        <!-- Données chargées dynamiquement -->
+                        <tr><td colspan="6" style="text-align:center;">Chargement...</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -59,89 +86,42 @@
     </div>
 
     <script>
-        // Charger la liste des locataires depuis l'API
+        function toggleFormulaire() {
+            const form = document.getElementById('form-container');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
         function chargerLocataires() {
             fetch('/api/locataires')
                 .then(res => res.json())
                 .then(data => {
                     const tbody = document.getElementById('locataires-list');
-                    tbody.innerHTML = '';
-                    if(data.length === 0) {
+                    if (data.length === 0) {
                         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Aucun locataire enregistré.</td></tr>';
                         return;
                     }
-                    data.forEach(l => {
-                        const tr = document.createElement('tr');
-                        tr.setAttribute('data-id', l.id);
-                        tr.innerHTML = `
-                            <td class="editable" data-field="nom">${l.nom || ''}</td>
-                            <td class="editable" data-field="prenom">${l.prenom || ''}</td>
-                            <td class="editable" data-field="email">${l.email || ''}</td>
-                            <td class="editable" data-field="telephone">${l.telephone || ''}</td>
-                            <td class="editable" data-field="date_naissance">${l.date_naissance ? l.date_naissance.substring(0, 10) : ''}</td>
+                    tbody.innerHTML = data.map(l => `
+                        <tr>
+                            <td>${l.nom || ''}</td>
+                            <td>${l.prenom || ''}</td>
+                            <td>${l.email || ''}</td>
+                            <td>${l.telephone || ''}</td>
+                            <td>${l.date_naissance ? l.date_naissance.substring(0, 10) : ''}</td>
                             <td>
-                                <button class="btn-action btn-edit" onclick="activerEdition(${l.id}, this)">Modifier</button>
                                 <button class="btn-action btn-delete" onclick="supprimerLocataire(${l.id})">Supprimer</button>
                             </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                })
-                .catch(err => console.error("Erreur de chargement :", err));
+                        </tr>
+                    `).join('');
+                });
         }
 
-        // Rendre la ligne éditable et enregistrer les modifications
-        function activerEdition(id, btn) {
-            const tr = btn.closest('tr');
-            const editables = tr.querySelectorAll('.editable');
-            
-            if (btn.innerText === "Modifier") {
-                editables.forEach(td => {
-                    const val = td.innerText;
-                    td.innerHTML = `<input type="text" value="${val}" style="width: 100%; padding: 4px;">`;
-                });
-                btn.innerText = "Enregistrer";
-                btn.className = "btn-action btn-save";
-            } else {
-                const updatedData = {};
-                editables.forEach(td => {
-                    const input = td.querySelector('input');
-                    const field = td.getAttribute('data-field');
-                    updatedData[field] = input.value;
-                });
-
-                fetch(`/api/locataires/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedData)
-                })
-                .then(res => {
-                    if(res.ok) {
-                        chargerLocataires();
-                    } else {
-                        alert("Erreur lors de la modification");
-                    }
-                })
-                .catch(err => console.error("Erreur :", err));
-            }
-        }
-
-        // Supprimer un locataire
         function supprimerLocataire(id) {
-            if(confirm("Voulez-vous vraiment supprimer ce locataire ?")) {
+            if (confirm("Voulez-vous vraiment supprimer ce locataire ?")) {
                 fetch(`/api/locataires/${id}`, { method: 'DELETE' })
-                    .then(res => {
-                        if(res.ok) {
-                            chargerLocataires();
-                        } else {
-                            alert("Erreur lors de la suppression");
-                        }
-                    })
-                    .catch(err => console.error("Erreur :", err));
+                    .then(res => { if (res.ok) chargerLocataires(); });
             }
         }
 
-        // Lancer le chargement au démarrage
         chargerLocataires();
     </script>
 </body>
