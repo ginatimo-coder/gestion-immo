@@ -6,13 +6,16 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname)));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
+// Connexion PostgreSQL
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// Création automatique de la table au démarrage pour éviter l'erreur 500
+// Création automatique de la table locataires au démarrage
 pool.query(`
     CREATE TABLE IF NOT EXISTS locataires (
         id SERIAL PRIMARY KEY,
@@ -23,14 +26,12 @@ pool.query(`
         date_naissance DATE
     );
 `).then(() => {
-    console.log("Table 'locataires' vérifiée/créée avec succès.");
+    console.log("Table 'locataires' vérifiée ou créée avec succès.");
 }).catch(err => {
-    console.error("Erreur lors de la création de la table :", err);
+    console.error("Erreur création table :", err);
 });
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
+// --- ROUTES PAGES ---
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -43,22 +44,24 @@ app.get('/locataires', (req, res) => {
     res.sendFile(path.join(__dirname, 'locataires.html'));
 });
 
+// --- API : LISTER ---
 app.get('/api/locataires', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM locataires ORDER BY id DESC');
         res.json(result.rows);
     } catch (err) {
-        console.error("Erreur lecture locataires :", err);
+        console.error("Erreur lecture :", err);
         res.status(500).send("Erreur serveur.");
     }
 });
 
+// --- API : AJOUTER ---
 app.post('/api/locataires', async (req, res) => {
     const { nom, prenom, email, telephone, date_naissance } = req.body;
     try {
         const query = `
             INSERT INTO locataires (nom, prenom, email, telephone, date_naissance) 
-            VALUES ($1, $2, $3, $4, $5) RETURNING *;
+            VALUES ($1, $2, $3, $4, $5);
         `;
         await pool.query(query, [nom, prenom, email, telephone, date_naissance]);
         res.redirect('/locataires');
@@ -68,6 +71,7 @@ app.post('/api/locataires', async (req, res) => {
     }
 });
 
+// --- API : MODIFIER ---
 app.put('/api/locataires/:id', async (req, res) => {
     const { id } = req.params;
     const { nom, prenom, email, telephone, date_naissance } = req.body;
@@ -85,6 +89,7 @@ app.put('/api/locataires/:id', async (req, res) => {
     }
 });
 
+// --- API : SUPPRIMER ---
 app.delete('/api/locataires/:id', async (req, res) => {
     const { id } = req.params;
     try {
