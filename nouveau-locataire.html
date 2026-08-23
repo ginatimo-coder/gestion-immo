@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter un Locataire - ImmoGérer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- La barre latérale est identique -->
+    <aside class="sidebar">
+        <!-- ... (Code de la sidebar identique au précédent) ... -->
+        <div class="logo">
+            <h2>ImmoGérer</h2>
+        </div>
+        <nav>
+            <ul class="nav-links">
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Tableau de bord</a></li>
+                <li><a href="#"><i class="fas fa-building"></i> Bâtiments</a></li>
+                <li><a href="#"><i class="fas fa-door-open"></i> Biens</a></li>
+                <li><a href="#" class="active"><i class="fas fa-users"></i> Locataires</a></li>
+                <li><a href="#"><i class="fas fa-file-contract"></i> Baux</a></li>
+                <li><a href="#"><i class="fas fa-money-bill-wave"></i> Paiements</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <!-- L'en-tête est identique -->
+        <header>
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Rechercher un locataire, un bien...">
+            </div>
+            <div class="user-profile">
+                <span>Administrateur</span>
+                <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="Profil">
+            </div>
+        </header>
+
+        <!-- Nouvelle section pour le formulaire -->
+        <section class="form-section">
+            <div class="form-header">
+                <h1>Ajouter un nouveau locataire</h1>
+                <a href="#" class="btn-cancel">Annuler</a>
+            </div>
+
+            <div class="form-container">
+                <form action="/ajouter-locataire" method="POST">
+                    
+                    <!-- Bloc : Informations personnelles -->
+                    <div class="form-group-title">Informations Personnelles</div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nom">Nom <span class="required">*</span></label>
+                            <input type="text" id="nom" name="nom" required placeholder="Ex: Kasongo">
+                        </div>
+                        <div class="form-group">
+                            <label for="prenom">Prénom <span class="required">*</span></label>
+                            <input type="text" id="prenom" name="prenom" required placeholder="Ex: Jean">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="date_naissance">Date de naissance</label>
+                            <input type="date" id="date_naissance" name="date_naissance">
+                        </div>
+                    </div>
+
+                    <!-- Bloc : Coordonnées -->
+                    <div class="form-group-title">Coordonnées</div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Adresse Email <span class="required">*</span></label>
+                            <input type="email" id="email" name="email" required placeholder="jean.kasongo@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="telephone">Téléphone</label>
+                            <input type="tel" id="telephone" name="telephone" placeholder="Ex: +243 810 000 000">
+                        </div>
+                    </div>
+
+                    <!-- Bouton de soumission -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">Enregistrer le locataire</button>
+                    </div>
+                    
+                </form>
+            </div>
+        </section>
+    </main>
+
+</body>
+</html>
