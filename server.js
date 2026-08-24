@@ -16,7 +16,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Création automatique des tables
+// Création automatique des tables et mise à jour des colonnes manquantes
 pool.query(`
     CREATE TABLE IF NOT EXISTS locataires (
         id SERIAL PRIMARY KEY,
@@ -43,6 +43,9 @@ pool.query(`
         date_fin DATE,
         contrat_url TEXT
     );
+
+    -- Sécurité : ajoute la colonne si une ancienne table existe sans elle
+    ALTER TABLE baux ADD COLUMN IF NOT EXISTS contrat_url TEXT;
 
     CREATE TABLE IF NOT EXISTS paiements (
         id SERIAL PRIMARY KEY,
