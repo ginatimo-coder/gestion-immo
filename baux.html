@@ -20,8 +20,8 @@
                 <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
                 <li><a href="/baux" class="active"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
                 <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-                <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
                 <li><a href="/factures"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
+                <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
                 <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
             </ul>
         </aside>
@@ -132,11 +132,57 @@
                             <td>${b.date_debut ? b.date_debut.substring(0, 10) : ''}</td>
                             <td>${b.date_fin ? b.date_fin.substring(0, 10) : 'Indéterminée'}</td>
                             <td>
+                                <button class="btn-action" style="background:#10b981; color:white;" onclick="genererContratBail('${b.locataire_nom} ${b.locataire_prenom}', '${b.nom_bien}', '${b.date_debut}', '${b.date_fin || 'Indéterminée'}')"><i class="fa-solid fa-print"></i> Contrat</button>
                                 <button class="btn-action btn-delete" onclick="supprimerBail(${b.id})">Résilier</button>
                             </td>
                         </tr>
                     `).join('');
                 });
+        }
+
+        function genererContratBail(locataire, bien, debut, fin) {
+            const fenetre = window.open('', '_blank');
+            fenetre.document.write(`
+                <html>
+                <head>
+                    <title>Contrat de Bail</title>
+                    <style>
+                        body { font-family: 'Times New Roman', serif; padding: 50px; line-height: 1.6; color: #333; }
+                        h1 { text-align: center; text-transform: uppercase; margin-bottom: 30px; }
+                        .section { margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>CONTRAT DE LOCATION IMMOBILIÈRE</h1>
+                    <div class="section">
+                        <p>Entre les soussignés :</p>
+                        <p><strong>Le Bailleur :</strong> La société de gestion immobilière ImmoGérer</p>
+                        <p><strong>Et le Locataire :</strong> ${locataire}</p>
+                    </div>
+                    <div class="section">
+                        <p>Il a été convenu ce qui suit concernant le bien immobilier désigné ci-dessous :</p>
+                        <p><strong>Bien loué :</strong> ${bien}</p>
+                        <p><strong>Date de prise d'effet :</strong> ${debut ? debut.substring(0, 10) : ''}</p>
+                        <p><strong>Date de fin :</strong> ${fin.substring(0, 10)}</p>
+                    </div>
+                    <div class="section">
+                        <p>Le locataire s'engage à respecter les termes et conditions du présent bail, notamment le paiement ponctuel du loyer convenu.</p>
+                    </div>
+                    <br><br><br>
+                    <table width="100%">
+                        <tr>
+                            <td align="center">Fait à __________, le ${new Date().toLocaleDateString()}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-top: 50px;"><br><br><strong>Signature du Bailleur</strong></td>
+                            <td align="right" style="padding-top: 50px;"><br><br><strong>Signature du Locataire</strong></td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+            `);
+            fenetre.document.close();
+            fenetre.print();
         }
 
         function supprimerBail(id) {
