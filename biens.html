@@ -1,139 +1,42 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Biens - ImmoGérer</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .btn-action { padding: 5px 10px; margin-right: 5px; border: none; border-radius: 4px; cursor: pointer; color: white; }
-        .btn-delete { background-color: #e74c3c; }
-        .form-container { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; max-width: 600px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <!-- Barre latérale -->
-     <aside class="sidebar">
-    <div class="brand">
-        <i class="fa-solid fa-building-shield"></i>
-        <h2>ImmoGérer</h2>
-    </div>
-    <ul>
-        <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
-        <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
-        <li><a href="/biens"><i class="fa-solid fa-city"></i> Biens immobiliers</a></li>
-        <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
-        <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-        <li><a href="/comptabilite"><i class="fa-solid fa-calculator"></i> Comptabilité Générale</a></li>
-        <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
-    </ul>
-</aside>
+<script>
+        function toggleFormulaire() {
+            const form = document.getElementById('form-container');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
 
-        <!-- Contenu principal -->
-        <main class="main-content">
-            <header>
-                <h1>Gestion des Biens Immobiliers</h1>
-            </header>
-
-            <!-- Formulaire d'ajout rapide -->
-            <div class="form-container">
-                <h3>Ajouter un nouveau bien</h3>
-                <form action="/api/biens" method="POST">
-                    <div class="form-group">
-                        <label>Nom du Bien / Appartement :</label>
-                        <input type="text" name="nom_bien" required placeholder="ex: Résidence Gombe (A101)">
-                    </div>
-                    <div class="form-group">
-                        <label>Type de bien :</label>
-                        <input type="text" name="type" required placeholder="ex: Appartement, Studio, Villa">
-                    </div>
-                    <div class="form-group">
-                        <label>Loyer ($) :</label>
-                        <input type="number" step="0.01" name="loyer" required placeholder="ex: 500">
-                    </div>
-                    <div class="form-group">
-                        <label>Statut :</label>
-                        <select name="statut">
-                            <option value="Libre">Libre</option>
-                            <option value="Loué">Loué</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn-primary" style="padding: 10px 20px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Enregistrer le bien</button>
-                </form>
-            </div>
-
-            <!-- Tableau des biens -->
-            <section class="card" style="overflow-x: auto;">
-                <h3>Liste des Biens</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nom du Bien</th>
-                            <th>Type</th>
-                            <th>Loyer ($)</th>
-                            <th>Statut</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="biens-list">
-                        <!-- Chargé dynamiquement -->
-                    </tbody>
-                </table>
-            </section>
-        </main>
-    </div>
-
-    <script>
         function chargerBiens() {
             fetch('/api/biens')
                 .then(res => res.json())
                 .then(data => {
                     const tbody = document.getElementById('biens-list');
-                    tbody.innerHTML = '';
-                    if(data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Aucun bien enregistré.</td></tr>';
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Aucun bien immobilier enregistré.</td></tr>';
                         return;
                     }
-                    data.forEach(b => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
+                    tbody.innerHTML = data.map(b => `
+                        <tr>
                             <td>${b.nom_bien || ''}</td>
                             <td>${b.type || ''}</td>
-                            <td>${b.loyer || ''} $</td>
-                            <td><span style="padding: 3px 8px; border-radius: 4px; background: ${b.statut === 'Loué' ? '#d4edda' : '#fff3cd'}; color: ${b.statut === 'Loué' ? '#155724' : '#856404'};">${b.statut || 'Libre'}</span></td>
+                            <td><strong>${b.loyer || 0} $</strong></td>
+                            <td><span class="badge ${b.statut === 'Loué' ? 'badge-success' : 'badge-warning'}">${b.statut || 'Libre'}</span></td>
                             <td>
                                 <button class="btn-action btn-delete" onclick="supprimerBien(${b.id})">Supprimer</button>
                             </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+                        </tr>
+                    `).join('');
                 })
-                .catch(err => console.error("Erreur chargement biens :", err));
+                .catch(err => {
+                    console.warn("Session expirée ou non connecté, redirection vers le login...");
+                    window.location.href = '/login';
+                });
         }
 
         function supprimerBien(id) {
-            if(confirm("Voulez-vous vraiment supprimer ce bien ?")) {
+            if (confirm("Voulez-vous vraiment supprimer ce bien ?")) {
                 fetch(`/api/biens/${id}`, { method: 'DELETE' })
-                    .then(res => {
-                        if(res.ok) {
-                            chargerBiens();
-                        } else {
-                            alert("Erreur lors de la suppression");
-                        }
-                    })
-                    .catch(err => console.error("Erreur :", err));
+                    .then(res => { if (res.ok) chargerBiens(); });
             }
         }
 
         chargerBiens();
-        console.warn("Session expirée ou non connecté, redirection vers le login...");
-            window.location.href = '/login';
-        });
     </script>
-</body>
-</html>
