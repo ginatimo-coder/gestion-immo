@@ -13,11 +13,12 @@ app.use(express.json());
 // Configuration robuste de la session
 app.use(session({
     secret: process.env.SESSION_SECRET || 'cle_secrete_immogerer_2026',
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     cookie: { 
         secure: false, 
-        httpOnly: true,
+        httpOnly: false,
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 
     }
 }));
