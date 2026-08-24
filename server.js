@@ -9,7 +9,6 @@ app.use(express.static(path.join(__dirname)));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Gestion simple d'un cookie d'authentification par en-tête / stockage de base
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const pool = new Pool({
@@ -73,7 +72,6 @@ app.get('/login', (req, res) => {
 app.post('/api/login', (req, res) => {
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
-        // On pose un cookie simple "auth=true" valable 24h
         res.cookie('auth', 'true', { maxAge: 86400000, httpOnly: false });
         res.redirect('/');
     } else {
@@ -94,7 +92,7 @@ app.get('/baux', (req, res) => res.sendFile(path.join(__dirname, 'baux.html')));
 app.get('/paiements', (req, res) => res.sendFile(path.join(__dirname, 'paiements.html')));
 app.get('/comptabilite', (req, res) => res.sendFile(path.join(__dirname, 'comptabilite.html')));
 
-// --- API SÉCURISÉES (Requêtes paramétrées) ---
+// --- API ---
 
 app.get('/api/locataires', async (req, res) => {
     const result = await pool.query('SELECT * FROM locataires ORDER BY id DESC');
