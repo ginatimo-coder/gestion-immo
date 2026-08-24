@@ -10,7 +10,6 @@ app.use(express.static(path.join(__dirname)));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Configuration robuste de la session
 // Configuration de session tolérante pour Render (HTTP/HTTPS)
 app.use(session({
     secret: process.env.SESSION_SECRET || 'cle_secrete_immogerer_2026',
