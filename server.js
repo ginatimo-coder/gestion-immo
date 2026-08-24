@@ -16,7 +16,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Création automatique des tables et mise à jour des colonnes manquantes
+// Création automatique des tables et mise à jour des colonnes si nécessaire
 pool.query(`
     CREATE TABLE IF NOT EXISTS locataires (
         id SERIAL PRIMARY KEY,
@@ -44,7 +44,6 @@ pool.query(`
         contrat_url TEXT
     );
 
-    -- Sécurité : ajoute la colonne si une ancienne table existe sans elle
     ALTER TABLE baux ADD COLUMN IF NOT EXISTS contrat_url TEXT;
 
     CREATE TABLE IF NOT EXISTS paiements (
@@ -54,6 +53,16 @@ pool.query(`
         date_paiement DATE,
         montant NUMERIC,
         statut VARCHAR(50) DEFAULT 'Payé'
+    );
+
+    CREATE TABLE IF NOT EXISTS factures (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(20),
+        locataire_id INT REFERENCES locataires(id) ON DELETE CASCADE,
+        bien_id INT REFERENCES biens(id) ON DELETE CASCADE,
+        montant NUMERIC,
+        date_emission DATE,
+        statut VARCHAR(30) DEFAULT 'Impayée'
     );
 
     CREATE TABLE IF NOT EXISTS journal_comptable (
@@ -93,10 +102,10 @@ app.get('/locataires', (req, res) => res.sendFile(path.join(__dirname, 'locatair
 app.get('/biens', (req, res) => res.sendFile(path.join(__dirname, 'biens.html')));
 app.get('/baux', (req, res) => res.sendFile(path.join(__dirname, 'baux.html')));
 app.get('/paiements', (req, res) => res.sendFile(path.join(__dirname, 'paiements.html')));
+app.get('/factures', (req, res) => res.sendFile(path.join(__dirname, 'factures.html')));
 app.get('/comptabilite', (req, res) => res.sendFile(path.join(__dirname, 'comptabilite.html')));
 
-// --- API ---
-
+// --- API LOCATAIRES ---
 app.get('/api/locataires', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM locataires ORDER BY id DESC');
@@ -128,6 +137,7 @@ app.delete('/api/locataires/:id', async (req, res) => {
     }
 });
 
+// --- API BIENS ---
 app.get('/api/biens', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM biens ORDER BY id DESC');
@@ -159,6 +169,7 @@ app.delete('/api/biens/:id', async (req, res) => {
     }
 });
 
+// --- API BAUX ---
 app.get('/api/baux', async (req, res) => {
     try {
         const query = `
@@ -178,8 +189,6 @@ app.get('/api/baux', async (req, res) => {
 app.post('/api/baux', async (req, res) => {
     try {
         let { locataire_id, bien_id, date_debut, date_fin, contrat_url } = req.body;
-        
-        // Sécurité pour transformer les chaînes vides en NULL pour les champs de type DATE
         if (!date_debut || date_debut.trim() === '') date_debut = null;
         if (!date_fin || date_fin.trim() === '') date_fin = null;
 
@@ -192,7 +201,7 @@ app.post('/api/baux', async (req, res) => {
         
         res.redirect('/baux');
     } catch (err) {
-        console.error("ERREUR SQL DÉTAILLÉE (Baux):", err.message);
+        console.error("ERREUR SQL (Baux):", err.message);
         res.status(500).send(`<h2 style="color:red;">Erreur Interne du Serveur :</h2><pre>${err.message}</pre>`);
     }
 });
@@ -210,6 +219,7 @@ app.delete('/api/baux/:id', async (req, res) => {
     }
 });
 
+// --- API PAIEMENTS ---
 app.get('/api/paiements', async (req, res) => {
     try {
         const query = `
@@ -266,6 +276,48 @@ app.delete('/api/paiements/:id', async (req, res) => {
     }
 });
 
+// --- API FACTURES & PROFORMAS ---
+app.get('/api/factures', async (req, res) => {
+    try {
+        const query = `
+            SELECT factures.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien 
+            FROM factures 
+            JOIN locataires ON factures.locataire_id = locataires.id 
+            JOIN biens ON factures.bien_id = biens.id 
+            ORDER BY factures.id DESC;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.post('/api/factures', async (req, res) => {
+    try {
+        let { type, locataire_id, bien_id, montant, date_emission, statut } = req.body;
+        if (!date_emission || date_emission.trim() === '') date_emission = null;
+
+        await pool.query(
+            'INSERT INTO factures (type, locataire_id, bien_id, montant, date_emission, statut) VALUES ($1, $2, $3, $4, $5, $6)',
+            [type, locataire_id, bien_id, montant, date_emission, statut || 'Impayée']
+        );
+        res.redirect('/factures');
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.delete('/api/factures/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM factures WHERE id = $1', [req.params.id]);
+        res.sendStatus(200);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// --- API COMPTABILITÉ ---
 app.get('/api/comptabilite/journal', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM journal_comptable ORDER BY date_operation DESC, id DESC');
