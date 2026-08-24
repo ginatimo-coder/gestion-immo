@@ -2,95 +2,159 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion des Baux - ImmoGérer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrats de Baux - ImmoGérer</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="app-container">
-      <aside class="sidebar">
-    <div class="brand">
-        <i class="fa-solid fa-building-shield"></i>
-        <h2>ImmoGérer</h2>
-    </div>
-    <ul>
-        <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
-        <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
-        <li><a href="/biens"><i class="fa-solid fa-city"></i> Biens immobiliers</a></li>
-        <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
-        <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-        <li><a href="/comptabilite"><i class="fa-solid fa-calculator"></i> Comptabilité Générale</a></li>
-        <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
-    </ul>
-</aside>
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-building-shield"></i> ImmoGérer
+            </div>
+            <ul>
+                <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+                <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
+                <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
+                <li><a href="/baux" class="active"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+                <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+                <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
+                <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content Area -->
         <main class="main-content">
-            <header><h1>Gestion des Contrats de Bail</h1></header>
-            <div class="form-container">
-                <h3>Établir un nouveau bail</h3>
-                <form action="/api/baux" method="POST" enctype="multipart/form-data">
+            <header class="top-header">
+                <h1>Gestion des Contrats de Baux</h1>
+                <button class="btn-primary" onclick="toggleFormulaire()">
+                    <i class="fa-solid fa-plus"></i> Nouveau Bail
+                </button>
+            </header>
+
+            <!-- Formulaire d'ajout -->
+            <div id="form-container" class="form-container" style="display: none;">
+                <h3 style="margin-bottom: 20px; color: #0284c7;">Établir un Contrat de Bail</h3>
+                <form action="/api/baux" method="POST">
                     <div class="form-group">
                         <label>Locataire :</label>
-                        <select name="locataire_id" id="select-locataire" required><option value="">Chargement...</option></select>
+                        <select name="locataire_id" id="select-locataires" required>
+                            <option value="">Chargement des locataires...</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Bien immobilier :</label>
-                        <select name="bien_id" id="select-bien" required><option value="">Chargement...</option></select>
+                        <label>Bien Immobilier (Libre) :</label>
+                        <select name="bien_id" id="select-biens" required>
+                            <option value="">Chargement des biens...</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Date de début :</label>
                         <input type="date" name="date_debut" required>
                     </div>
                     <div class="form-group">
-                        <label>Date de fin :</label>
+                        <label>Date de fin (Optionnel) :</label>
                         <input type="date" name="date_fin">
                     </div>
-                    <div class="form-group">
-                        <label>Uploader le contrat (PDF / Image) :</label>
-                        <input type="file" name="contrat_fichier">
-                    </div>
-                    <button type="submit" class="btn-primary">Enregistrer le bail</button>
+                    <button type="submit" class="btn-primary">Valider et lier le bail</button>
                 </form>
             </div>
-            <section class="card" style="max-width: 100%; overflow-x: auto;">
-                <h3>Liste des Baux Actifs</h3>
-                <table>
-                    <thead>
-                        <tr><th>Locataire</th><th>Bien</th><th>Début</th><th>Fin</th><th>Contrat</th><th>Actions</th></tr>
-                    </thead>
-                    <tbody id="baux-list"></tbody>
-                </table>
-            </section>
+
+            <!-- Liste des Baux -->
+            <div class="card">
+                <h3 style="margin-bottom: 20px; color: #1e293b;">Baux Actifs</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Locataire</th>
+                                <th>Bien Immobilier</th>
+                                <th>Début</th>
+                                <th>Fin</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="baux-list">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: #64748b;">Chargement des données...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </main>
     </div>
+
     <script>
-        fetch('/api/locataires').then(res => res.json()).then(data => {
-            document.getElementById('select-locataire').innerHTML = data.map(l => `<option value="${l.id}">${l.nom} ${l.prenom}</option>`).join('');
-        });
-        fetch('/api/biens').then(res => res.json()).then(data => {
-            document.getElementById('select-bien').innerHTML = data.filter(b => b.statut === 'Libre').map(b => `<option value="${b.id}">${b.nom_bien} (${b.loyer}$)</option>`).join('');
-        });
-        function chargerBaux() {
-            fetch('/api/baux').then(res => res.json()).then(data => {
-                const tbody = document.getElementById('baux-list');
-                tbody.innerHTML = data.length === 0 ? '<tr><td colspan="6" style="text-align:center;">Aucun bail enregistré.</td></tr>' : 
-                    data.map(b => `<tr>
-                        <td>${b.locataire_nom} ${b.locataire_prenom}</td>
-                        <td>${b.nom_bien}</td>
-                        <td>${b.date_debut?.substring(0,10)}</td>
-                        <td>${b.date_fin?.substring(0,10) || 'Indéterminée'}</td>
-                        <td>${b.contrat_url ? `<a href="${b.contrat_url}" target="_blank" style="color: #0ea5e9; font-weight:600;"><i class="fa-solid fa-file-arrow-down"></i> Voir</a>` : 'Aucun'}</td>
-                        <td><button class="btn-action btn-delete" onclick="supprimerBail(${b.id})">Supprimer</button></td>
-                    </tr>`).join('');
-            });
+        function toggleFormulaire() {
+            const form = document.getElementById('form-container');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
+
+        function chargerDonneesFormulaire() {
+            fetch('/api/locataires')
+                .then(res => res.json())
+                .then(locataires => {
+                    const selectL = document.getElementById('select-locataires');
+                    selectL.innerHTML = locataires.map(l => `<option value="${l.id}">${l.nom} ${l.prenom}</option>`).join('');
+                });
+
+            fetch('/api/biens')
+                .then(res => res.json())
+                .then(biens => {
+                    const selectB = document.getElementById('select-biens');
+                    const libres = biens.filter(b => b.statut === 'Libre');
+                    if (libres.length === 0) {
+                        selectB.innerHTML = '<option value="">Aucun bien libre disponible</option>';
+                        return;
+                    }
+                    selectB.innerHTML = libres.map(b => `<option value="${b.id}">${b.nom_bien} (${b.loyer} $)</option>`).join('');
+                });
+        }
+
+        function chargerBaux() {
+            fetch('/api/baux')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('baux-list');
+                    if (!tbody) return;
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #64748b;">Aucun contrat de bail enregistré.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = data.map(b => `
+                        <tr>
+                            <td><strong>${b.locataire_nom || ''} ${b.locataire_prenom || ''}</strong></td>
+                            <td>${b.nom_bien || ''}</td>
+                            <td>${b.date_debut ? b.date_debut.substring(0, 10) : ''}</td>
+                            <td>${b.date_fin ? b.date_fin.substring(0, 10) : 'Indéterminée'}</td>
+                            <td>
+                                <button class="btn-action btn-delete" onclick="supprimerBail(${b.id})">Résilier</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                });
+        }
+
         function supprimerBail(id) {
-            if(confirm("Supprimer ce bail remettra le bien en statut Libre. Continuer ?")) {
-                fetch(`/api/baux/${id}`, { method: 'DELETE' }).then(() => chargerBaux());
+            if (confirm("Voulez-vous vraiment résilier ce bail ? Le bien redeviendra libre.")) {
+                fetch(`/api/baux/${id}`, { method: 'DELETE' })
+                    .then(res => {
+                        if (res.ok) {
+                            chargerBaux();
+                            chargerDonneesFormulaire();
+                        } else {
+                            alert("Erreur lors de la résiliation.");
+                        }
+                    });
             }
         }
-        chargerBaux();
-        console.warn("Session expirée ou non connecté, redirection vers le login...");
-            window.location.href = '/login';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            chargerBaux();
+            chargerDonneesFormulaire();
         });
     </script>
 </body>
