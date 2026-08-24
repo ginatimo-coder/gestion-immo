@@ -69,19 +69,27 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-app.post('/api/login', (req, res) => {
-    const { password } = req.body;
-    if (password === ADMIN_PASSWORD) {
-        res.cookie('auth', 'true', { maxAge: 86400000, httpOnly: false });
-        res.redirect('/');
-    } else {
-        res.redirect('/login?erreur=1');
-    }
-});
+app.post('/api/baux', async (req, res) => {
+    try {
+        let { locataire_id, bien_id, date_debut, date_fin, contrat_url } = req.body;
+        
+        // Si date_fin est vide, on la force à null pour éviter l'erreur SQL sur les dates
+        if (!date_fin || date_fin.trim() === '') {
+            date_fin = null;
+        }
 
-app.get('/logout', (req, res) => {
-    res.clearCookie('auth');
-    res.redirect('/login');
+        await pool.query(
+            'INSERT INTO baux (locataire_id, bien_id, date_debut, date_fin, contrat_url) VALUES ($1, $2, $3, $4, $5)',
+            [locataire_id, bien_id, date_debut, date_fin, contrat_url || null]
+        );
+        
+        await pool.query("UPDATE biens SET statut = 'Loué' WHERE id = $1", [bien_id]);
+        
+        res.redirect('/baux');
+    } catch (err) {
+        console.error("Erreur détaillée lors de la création du bail:", err.message);
+        res.status(500).send("Erreur serveur SQL : " + err.message);
+    }
 });
 
 // --- ROUTES PAGES ---
