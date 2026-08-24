@@ -2,229 +2,212 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comptabilité Générale - ImmoGérer</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { padding: 10px 20px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: #475569; }
-        .tab-btn.active { background: #0284c7; color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .kpi-box { background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .kpi-box h4 { font-size: 12px; color: #64748b; margin-bottom: 5px; }
-        .kpi-box p { font-size: 18px; font-weight: bold; color: #0f172a; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    </style>
 </head>
 <body>
     <div class="app-container">
-       <aside class="sidebar">
-    <div class="brand">
-        <i class="fa-solid fa-building-shield"></i>
-        <h2>ImmoGérer</h2>
-    </div>
-    <ul>
-        <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
-        <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
-        <li><a href="/biens"><i class="fa-solid fa-city"></i> Biens immobiliers</a></li>
-        <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
-        <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-        <li><a href="/comptabilite"><i class="fa-solid fa-calculator"></i> Comptabilité Générale</a></li>
-        <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
-    </ul>
-</aside>
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-building-shield"></i> ImmoGérer
+            </div>
+            <ul>
+                <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+                <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
+                <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
+                <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+                <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+                <li><a href="/comptabilite" class="active"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
+                <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content Area -->
         <main class="main-content">
             <header class="top-header">
-                <h1>Comptabilité Générale & Plan Comptable</h1>
+                <h1>Comptabilité Générale</h1>
+                <button class="btn-primary" onclick="toggleFormulaire()">
+                    <i class="fa-solid fa-plus"></i> Saisir une écriture
+                </button>
             </header>
 
-            <!-- Navigation des onglets -->
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('saisie')">Saisie d'écriture</button>
-                <button class="tab-btn" onclick="switchTab('journal')">Journal Général</button>
-                <button class="tab-btn" onclick="switchTab('balance')">Balance Générale</button>
-                <button class="tab-btn" onclick="switchTab('resultat')">Compte de Résultat</button>
+            <!-- Formulaire d'écriture manuelle -->
+            <div id="form-container" class="form-container" style="display: none;">
+                <h3 style="margin-bottom: 20px; color: #0284c7;">Nouvelle Écriture Comptable</h3>
+                <form id="form-ecriture" onsubmit="ajouterEcriture(event)">
+                    <div class="form-group">
+                        <label>Date de l'opération :</label>
+                        <input type="date" name="date_operation" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Libellé :</label>
+                        <input type="text" name="libelle" required placeholder="Ex: Achat de fournitures">
+                    </div>
+                    <div class="form-group">
+                        <label>Compte Débit :</label>
+                        <input type="text" name="compte_debit" required placeholder="Ex: 606 - Achats">
+                    </div>
+                    <div class="form-group">
+                        <label>Compte Crédit :</label>
+                        <input type="text" name="compte_credit" required placeholder="Ex: 531 - Caisse">
+                    </div>
+                    <div class="form-group">
+                        <label>Montant ($) :</label>
+                        <input type="number" step="0.01" name="montant" required placeholder="Ex: 100">
+                    </div>
+                    <div class="form-group">
+                        <label>Type de flux :</label>
+                        <select name="type_flux">
+                            <option value="Encaissement">Encaissement</option>
+                            <option value="Décaissement">Décaissement</option>
+                            <option value="Opération diverse">Opération diverse</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">Enregistrer l'écriture</button>
+                </form>
             </div>
 
-            <!-- ONGLET 0 : SAISIE D'ÉCRITURE -->
-            <div id="saisie" class="tab-content active">
-                <div class="form-container" style="max-width: 100%;">
-                    <h3>Passer une écriture comptable (Plan Comptable)</h3>
-                    <form id="form-ecriture" onsubmit="ajouterEcriture(event)">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Date de l'opération :</label>
-                                <input type="date" id="date_operation" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Montant ($) :</label>
-                                <input type="number" step="0.01" id="montant" required placeholder="ex: 500">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Libellé / Description :</label>
-                            <input type="text" id="libelle" required placeholder="ex: Règlement loyer appartement A101">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Compte Débit :</label>
-                                <select id="compte_debit" required>
-                                    <option value="531 - Caisse">531 - Caisse</option>
-                                    <option value="521 - Banque">521 - Banque</option>
-                                    <option value="411 - Clients (Locataires)">411 - Clients (Locataires)</option>
-                                    <option value="605 - Entretents et réparations">605 - Entretiens et réparations</option>
-                                    <option value="631 - Frais d'administration">631 - Frais d'administration</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Compte Crédit :</label>
-                                <select id="compte_credit" required>
-                                    <option value="706 - Location de biens immobiliers">706 - Location de biens immobiliers</option>
-                                    <option value="411 - Clients (Locataires)">411 - Clients (Locataires)</option>
-                                    <option value="531 - Caisse">531 - Caisse</option>
-                                    <option value="758 - Produits divers">758 - Produits divers</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Type de Flux :</label>
-                            <select id="type_flux">
-                                <option value="Encaissement">Encaissement</option>
-                                <option value="Decaissement">Décaissement</option>
-                                <option value="Opération diverse">Opération diverse</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn-primary">Enregistrer l'écriture</button>
-                    </form>
-                </div>
+            <!-- Onglets de navigation interne -->
+            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                <button class="btn-primary" onclick="switchTab('journal')" id="btn-journal">Journal des Écritures</button>
+                <button class="btn-primary" onclick="switchTab('synthese')" id="btn-synthese" style="background: #64748b;">Synthèse & Bilan</button>
             </div>
 
-            <!-- ONGLET 1 : JOURNAL -->
-            <div id="journal" class="tab-content">
-                <div class="card" style="max-width: 100%;">
-                    <h3>Journal des Écritures</h3>
+            <!-- Vue Journal -->
+            <div id="tab-journal" class="card">
+                <h3 style="margin-bottom: 20px; color: #1e293b;">Journal Général</h3>
+                <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr><th>Date</th><th>Libellé</th><th>Compte Débit</th><th>Compte Crédit</th><th>Montant</th><th>Type</th></tr>
+                            <tr>
+                                <th>Date</th>
+                                <th>Libellé</th>
+                                <th>Débit</th>
+                                <th>Crédit</th>
+                                <th>Montant</th>
+                                <th>Flux</th>
+                            </tr>
                         </thead>
-                        <tbody id="journal-list"><tr><td colspan="6" style="text-align:center;">Chargement...</td></tr></tbody>
+                        <tbody id="journal-list">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: #64748b;">Chargement...</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- ONGLET 2 : BALANCE -->
-            <div id="balance" class="tab-content">
-                <div class="card" style="max-width: 100%;">
-                    <h3>Balance Générale des Comptes</h3>
-                    <table>
-                        <thead>
-                            <tr><th>Compte</th><th>Total Débit</th><th>Total Crédit</th><th>Solde Net</th></tr>
-                        </thead>
-                        <tbody id="balance-list"><tr><td colspan="4" style="text-align:center;">Chargement...</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- ONGLET 3 : COMPTE DE RESULTAT -->
-            <div id="resultat" class="tab-content">
-                <div class="kpi-row">
-                    <div class="kpi-box"><h4>Total Produits (Classe 7)</h4><p id="res-produits" style="color: #16a34a;">0 $</p></div>
-                    <div class="kpi-box"><h4>Total Charges (Classe 6)</h4><p id="res-charges" style="color: #dc2626;">0 $</p></div>
-                    <div class="kpi-box"><h4>Résultat Net (Bénéfice)</h4><p id="res-net" style="color: #0284c7;">0 $</p></div>
-                </div>
-                <div class="card" style="max-width: 100%;">
-                    <h3>Synthèse du Compte de Résultat</h3>
-                    <p style="color: #64748b; line-height: 1.6;">Ce compte de résultat synthétise les produits de location et les charges d'exploitation de votre parc immobilier selon les principes comptables standard.</p>
+            <!-- Vue Synthèse -->
+            <div id="tab-synthese" class="card" style="display: none;">
+                <h3 style="margin-bottom: 20px; color: #1e293b;">Synthèse Financière</h3>
+                <div id="synthese-content">
+                    <p style="color: #64748b;">Chargement de la synthèse...</p>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+        function toggleFormulaire() {
+            const form = document.getElementById('form-container');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
 
-        // Soumission d'une nouvelle écriture comptable
-        function ajouterEcriture(e) {
-            e.preventDefault();
-            const data = {
-                date_operation: document.getElementById('date_operation').value,
-                montant: document.getElementById('montant').value,
-                libelle: document.getElementById('libelle').value,
-                compte_debit: document.getElementById('compte_debit').value,
-                compte_credit: document.getElementById('compte_credit').value,
-                type_flux: document.getElementById('type_flux').value
-            };
+        function switchTab(tab) {
+            const jDiv = document.getElementById('tab-journal');
+            const sDiv = document.getElementById('tab-synthese');
+            const btnJ = document.getElementById('btn-journal');
+            const btnS = document.getElementById('btn-synthese');
+
+            if (tab === 'journal') {
+                jDiv.style.display = 'block';
+                sDiv.style.display = 'none';
+                btnJ.style.background = '#0284c7';
+                btnS.style.background = '#64748b';
+                chargerJournal();
+            } else {
+                jDiv.style.display = 'none';
+                sDiv.style.display = 'block';
+                btnS.style.background = '#0284c7';
+                btnJ.style.background = '#64748b';
+                chargerSynthese();
+            }
+        }
+
+        function chargerJournal() {
+            fetch('/api/comptabilite/journal')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('journal-list');
+                    if (!tbody) return;
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #64748b;">Aucune écriture comptable enregistrée.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = data.map(e => `
+                        <tr>
+                            <td>${e.date_operation ? e.date_operation.substring(0, 10) : ''}</td>
+                            <td><strong>${e.libelle || ''}</strong></td>
+                            <td>${e.compte_debit || ''}</td>
+                            <td>${e.compte_credit || ''}</td>
+                            <td><strong>${parseFloat(e.montant || 0).toLocaleString()} $</strong></td>
+                            <td><span class="badge ${e.type_flux === 'Encaissement' ? 'badge-success' : 'badge-warning'}">${e.type_flux || ''}</span></td>
+                        </tr>
+                    `).join('');
+                });
+        }
+
+        function chargerSynthese() {
+            fetch('/api/comptabilite/synthese')
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById('synthese-content');
+                    if (!container) return;
+                    container.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
+                                <h4 style="color: #64748b; font-size: 14px;">Total Produits (Recettes)</h4>
+                                <p style="font-size: 24px; font-weight: bold; color: #10b981; margin-top: 5px;">${parseFloat(data.totalProduits || 0).toLocaleString()} $</p>
+                            </div>
+                            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                                <h4 style="color: #64748b; font-size: 14px;">Total Charges (Dépenses)</h4>
+                                <p style="font-size: 24px; font-weight: bold; color: #ef4444; margin-top: 5px;">${parseFloat(data.totalCharges || 0).toLocaleString()} $</p>
+                            </div>
+                            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #0284c7;">
+                                <h4 style="color: #64748b; font-size: 14px;">Résultat Net</h4>
+                                <p style="font-size: 24px; font-weight: bold; color: #0284c7; margin-top: 5px;">${parseFloat(data.resultatNet || 0).toLocaleString()} $</p>
+                            </div>
+                        </div>
+                    `;
+                });
+        }
+
+        function ajouterEcriture(event) {
+            event.preventDefault();
+            const form = document.getElementById('form-ecriture');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
 
             fetch('/api/comptabilite/ecriture', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             }).then(res => {
-                if(res.ok) {
-                    alert("Écriture comptable enregistrée avec succès !");
-                    document.getElementById('form-ecriture').reset();
-                    chargerComptabilite();
-                    switchTab('journal');
+                if (res.ok) {
+                    toggleFormulaire();
+                    form.reset();
+                    chargerJournal();
                 } else {
-                    alert("Erreur lors de l'enregistrement.");
+                    alert("Erreur lors de l'enregistrement de l'écriture.");
                 }
             });
         }
 
-        function chargerComptabilite() {
-            // Journal
-            fetch('/api/comptabilite/journal')
-                .then(res => res.json())
-                .then(data => {
-                    const tbody = document.getElementById('journal-list');
-                    if(data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Aucune écriture comptable enregistrée.</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = data.map(j => `
-                        <tr>
-                            <td>${j.date_operation?.substring(0,10)}</td>
-                            <td>${j.libelle}</td>
-                            <td>${j.compte_debit}</td>
-                            <td>${j.compte_credit}</td>
-                            <td><strong>${j.montant} $</strong></td>
-                            <td><span class="badge badge-success">${j.type_flux}</span></td>
-                        </tr>
-                    `).join('');
-                });
-
-            // Synthèse (Balance & Résultat)
-            fetch('/api/comptabilite/synthese')
-                .then(res => res.json())
-                .then(data => {
-                    const bTbody = document.getElementById('balance-list');
-                    const comptes = data.comptes;
-                    if(Object.keys(comptes).length === 0) {
-                        bTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Aucun mouvement en balance.</td></tr>';
-                    } else {
-                        bTbody.innerHTML = Object.keys(comptes).map(compte => {
-                            const c = comptes[compte];
-                            const solde = c.debit - c.credit;
-                            return `<tr><td>${compte}</td><td>${c.debit} $</td><td>${c.credit} $</td><td><strong>${solde} $</strong></td></tr>`;
-                        }).join('');
-                    }
-
-                    document.getElementById('res-produits').innerText = data.totalProduits.toLocaleString() + ' $';
-                    document.getElementById('res-charges').innerText = data.totalCharges.toLocaleString() + ' $';
-                    document.getElementById('res-net').innerText = data.resultatNet.toLocaleString() + ' $';
-                });
-        }
-
-        chargerComptabilite();
-        console.warn("Session expirée ou non connecté, redirection vers le login...");
-            window.location.href = '/login';
+        document.addEventListener('DOMContentLoaded', () => {
+            chargerJournal();
         });
     </script>
 </body>
