@@ -1,42 +1,38 @@
 <script>
-        function toggleFormulaire() {
-            const form = document.getElementById('form-container');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
-        }
+    function toggleFormulaire() {
+        const form = document.getElementById('form-container');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
 
-        function chargerBiens() {
-            fetch('/api/biens')
-                .then(res => res.json())
-                .then(data => {
-                    const tbody = document.getElementById('biens-list');
-                    if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Aucun bien immobilier enregistré.</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = data.map(b => `
-                        <tr>
-                            <td>${b.nom_bien || ''}</td>
-                            <td>${b.type || ''}</td>
-                            <td><strong>${b.loyer || 0} $</strong></td>
-                            <td><span class="badge ${b.statut === 'Loué' ? 'badge-success' : 'badge-warning'}">${b.statut || 'Libre'}</span></td>
-                            <td>
-                                <button class="btn-action btn-delete" onclick="supprimerBien(${b.id})">Supprimer</button>
-                            </td>
-                        </tr>
-                    `).join('');
-                })
-                .catch(err => {
-                    console.warn("Session expirée ou non connecté, redirection vers le login...");
-                    window.location.href = '/login';
-                });
-        }
+    function chargerBiens() {
+        fetch('/api/biens')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('biens-list');
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Aucun bien immobilier enregistré.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.map(b => `
+                    <tr>
+                        <td>${b.nom_bien || ''}</td>
+                        <td>${b.type || ''}</td>
+                        <td><strong>${b.loyer || 0} $</strong></td>
+                        <td><span class="badge ${b.statut === 'Loué' ? 'badge-success' : 'badge-warning'}">${b.statut || 'Libre'}</span></td>
+                        <td>
+                            <button class="btn-action btn-delete" onclick="supprimerBien(${b.id})">Supprimer</button>
+                        </td>
+                    </tr>
+                `).join('');
+            });
+    }
 
-        function supprimerBien(id) {
-            if (confirm("Voulez-vous vraiment supprimer ce bien ?")) {
-                fetch(`/api/biens/${id}`, { method: 'DELETE' })
-                    .then(res => { if (res.ok) chargerBiens(); });
-            }
+    function supprimerBien(id) {
+        if (confirm("Voulez-vous vraiment supprimer ce bien ?")) {
+            fetch(`/api/biens/${id}`, { method: 'DELETE' })
+                .then(res => { if (res.ok) chargerBiens(); });
         }
+    }
 
-        chargerBiens();
-    </script>
+    chargerBiens();
+</script>
