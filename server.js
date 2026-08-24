@@ -69,27 +69,19 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-app.post('/api/baux', async (req, res) => {
-    try {
-        let { locataire_id, bien_id, date_debut, date_fin, contrat_url } = req.body;
-        
-        // Si date_fin est vide, on la force à null pour éviter l'erreur SQL sur les dates
-        if (!date_fin || date_fin.trim() === '') {
-            date_fin = null;
-        }
-
-        await pool.query(
-            'INSERT INTO baux (locataire_id, bien_id, date_debut, date_fin, contrat_url) VALUES ($1, $2, $3, $4, $5)',
-            [locataire_id, bien_id, date_debut, date_fin, contrat_url || null]
-        );
-        
-        await pool.query("UPDATE biens SET statut = 'Loué' WHERE id = $1", [bien_id]);
-        
-        res.redirect('/baux');
-    } catch (err) {
-        console.error("Erreur détaillée lors de la création du bail:", err.message);
-        res.status(500).send("Erreur serveur SQL : " + err.message);
+app.post('/api/login', (req, res) => {
+    const { password } = req.body;
+    if (password === ADMIN_PASSWORD) {
+        res.cookie('auth', 'true', { maxAge: 86400000, httpOnly: false });
+        res.redirect('/');
+    } else {
+        res.redirect('/login?erreur=1');
     }
+});
+
+app.get('/logout', (req, res) => {
+    res.clearCookie('auth');
+    res.redirect('/login');
 });
 
 // --- ROUTES PAGES ---
@@ -116,7 +108,7 @@ app.post('/api/locataires', async (req, res) => {
         const { nom, prenom, email, telephone, date_naissance } = req.body;
         await pool.query(
             'INSERT INTO locataires (nom, prenom, email, telephone, date_naissance) VALUES ($1, $2, $3, $4, $5)',
-            [nom, prenom, email, telephone, date_naissance]
+            [nom, prenom, email, telephone, date_naissance || null]
         );
         res.redirect('/locataires');
     } catch (err) {
@@ -182,16 +174,23 @@ app.get('/api/baux', async (req, res) => {
 
 app.post('/api/baux', async (req, res) => {
     try {
-        const { locataire_id, bien_id, date_debut, date_fin, contrat_url } = req.body;
+        let { locataire_id, bien_id, date_debut, date_fin, contrat_url } = req.body;
+        
+        // Sécurité pour transformer les chaînes vides en NULL pour les champs de type DATE
+        if (!date_debut || date_debut.trim() === '') date_debut = null;
+        if (!date_fin || date_fin.trim() === '') date_fin = null;
+
         await pool.query(
             'INSERT INTO baux (locataire_id, bien_id, date_debut, date_fin, contrat_url) VALUES ($1, $2, $3, $4, $5)',
-            [locataire_id, bien_id, date_debut, date_fin || null, contrat_url || null]
+            [locataire_id, bien_id, date_debut, date_fin, contrat_url || null]
         );
+        
         await pool.query("UPDATE biens SET statut = 'Loué' WHERE id = $1", [bien_id]);
+        
         res.redirect('/baux');
     } catch (err) {
-        console.error("Erreur création bail:", err);
-        res.status(500).send("Erreur serveur : " + err.message);
+        console.error("ERREUR SQL DÉTAILLÉE (Baux):", err.message);
+        res.status(500).send(`<h2 style="color:red;">Erreur Interne du Serveur :</h2><pre>${err.message}</pre>`);
     }
 });
 
@@ -226,7 +225,9 @@ app.get('/api/paiements', async (req, res) => {
 
 app.post('/api/paiements', async (req, res) => {
     try {
-        const { locataire_id, bien_id, date_paiement, montant, statut } = req.body;
+        let { locataire_id, bien_id, date_paiement, montant, statut } = req.body;
+        if (!date_paiement || date_paiement.trim() === '') date_paiement = null;
+
         await pool.query(
             'INSERT INTO paiements (locataire_id, bien_id, date_paiement, montant, statut) VALUES ($1, $2, $3, $4, $5)',
             [locataire_id, bien_id, date_paiement, montant, statut || 'Payé']
@@ -273,7 +274,9 @@ app.get('/api/comptabilite/journal', async (req, res) => {
 
 app.post('/api/comptabilite/ecriture', async (req, res) => {
     try {
-        const { date_operation, libelle, compte_debit, compte_credit, montant, type_flux } = req.body;
+        let { date_operation, libelle, compte_debit, compte_credit, montant, type_flux } = req.body;
+        if (!date_operation || date_operation.trim() === '') date_operation = null;
+
         await pool.query(
             `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
              VALUES ($1, $2, $3, $4, $5, $6)`,
