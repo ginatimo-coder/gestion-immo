@@ -3,213 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comptabilité Générale - ImmoGérer</title>
+    <title>Comptabilité & Caisse - ImmoGérer</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tabs-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+        .tab-btn { background: #64748b; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .tab-btn.active { background: #0284c7; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <div class="brand">
-                <i class="fa-solid fa-building-shield"></i> ImmoGérer
-            </div>
+            <div class="brand"><i class="fa-solid fa-building-shield"></i> ImmoGérer</div>
             <ul>
                 <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
                 <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
                 <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
                 <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
                 <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-                <li><a href="/comptabilite" class="active"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
                 <li><a href="/factures"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
+                <li><a href="/comptabilite" class="active"><i class="fa-solid fa-book"></i> Comptabilité & Caisse</a></li>
                 <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
             </ul>
         </aside>
 
-        <!-- Main Content Area -->
         <main class="main-content">
             <header class="top-header">
-                <h1>Comptabilité Générale</h1>
-                <button class="btn-primary" onclick="toggleFormulaire()">
-                    <i class="fa-solid fa-plus"></i> Saisir une écriture
-                </button>
+                <h1>Comptabilité Générale & Caisse</h1>
             </header>
 
-            <!-- Formulaire d'écriture manuelle -->
-            <div id="form-container" class="form-container" style="display: none;">
-                <h3 style="margin-bottom: 20px; color: #0284c7;">Nouvelle Écriture Comptable</h3>
-                <form id="form-ecriture" onsubmit="ajouterEcriture(event)">
-                    <div class="form-group">
-                        <label>Date de l'opération :</label>
-                        <input type="date" name="date_operation" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Libellé :</label>
-                        <input type="text" name="libelle" required placeholder="Ex: Achat de fournitures">
-                    </div>
-                    <div class="form-group">
-                        <label>Compte Débit :</label>
-                        <input type="text" name="compte_debit" required placeholder="Ex: 606 - Achats">
-                    </div>
-                    <div class="form-group">
-                        <label>Compte Crédit :</label>
-                        <input type="text" name="compte_credit" required placeholder="Ex: 531 - Caisse">
-                    </div>
-                    <div class="form-group">
-                        <label>Montant ($) :</label>
-                        <input type="number" step="0.01" name="montant" required placeholder="Ex: 100">
-                    </div>
-                    <div class="form-group">
-                        <label>Type de flux :</label>
-                        <select name="type_flux">
-                            <option value="Encaissement">Encaissement</option>
-                            <option value="Décaissement">Décaissement</option>
-                            <option value="Opération diverse">Opération diverse</option>
+            <!-- Navigation par onglets -->
+            <div class="tabs-nav">
+                <button class="tab-btn active" onclick="switchTab('caisse')"><i class="fa-solid fa-cash-register"></i> Caisse</button>
+                <button class="tab-btn" onclick="switchTab('journal')"><i class="fa-solid file-lines"></i> Journal</button>
+                <button class="tab-btn" onclick="switchTab('grand-livre')"><i class="fa-solid fa-book-open"></i> Grand Livre</button>
+                <button class="tab-btn" onclick="switchTab('balance')"><i class="fa-solid fa-scale-balanced"></i> Balance</button>
+                <button class="tab-btn" onclick="switchTab('resultat')"><i class="fa-solid fa-chart-line"></i> Compte de Résultat</button>
+                <button class="tab-btn" onclick="switchTab('cloture')" style="background: #0f172a;"><i class="fa-solid fa-lock"></i> Clôture</button>
+            </div>
+
+            <!-- ONGLET CAISSE -->
+            <div id="tab-caisse" class="tab-content active">
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3>Mouvement de Caisse</h3>
+                    <form onsubmit="ajouterCaisse(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <input type="date" name="date_operation" required style="padding: 8px;">
+                        <input type="text" name="libelle" placeholder="Libellé de la dépense/recette" required style="padding: 8px;">
+                        <select name="type_mouvement" required style="padding: 8px;">
+                            <option value="Entree">Entrée (Encaissement)</option>
+                            <option value="Sortie">Sortie (Décaissement)</option>
                         </select>
-                    </div>
-                    <button type="submit" class="btn-primary">Enregistrer l'écriture</button>
-                </form>
-            </div>
-
-            <!-- Onglets de navigation interne -->
-            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
-                <button class="btn-primary" onclick="switchTab('journal')" id="btn-journal">Journal des Écritures</button>
-                <button class="btn-primary" onclick="switchTab('synthese')" id="btn-synthese" style="background: #64748b;">Synthèse & Bilan</button>
-            </div>
-
-            <!-- Vue Journal -->
-            <div id="tab-journal" class="card">
-                <h3 style="margin-bottom: 20px; color: #1e293b;">Journal Général</h3>
-                <div class="table-responsive">
+                        <input type="number" step="0.01" name="montant" placeholder="Montant ($)" required style="padding: 8px;">
+                        <button type="submit" class="btn-primary" style="grid-column: 1 / -1;">Valider le mouvement</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3>Historique de Caisse</h3>
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Libellé</th>
-                                <th>Débit</th>
-                                <th>Crédit</th>
-                                <th>Montant</th>
-                                <th>Flux</th>
-                            </tr>
-                        </thead>
-                        <tbody id="journal-list">
-                            <tr>
-                                <td colspan="6" style="text-align: center; color: #64748b;">Chargement...</td>
-                            </tr>
-                        </tbody>
+                        <thead><tr><th>Date</th><th>Libellé</th><th>Mouvement</th><th>Montant</th></tr></thead>
+                        <tbody id="caisse-list"><tr><td colspan="4" style="text-align:center;">Chargement...</td></tr></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Vue Synthèse -->
-            <div id="tab-synthese" class="card" style="display: none;">
-                <h3 style="margin-bottom: 20px; color: #1e293b;">Synthèse Financière</h3>
-                <div id="synthese-content">
-                    <p style="color: #64748b;">Chargement de la synthèse...</p>
+            <!-- ONGLET JOURNAL -->
+            <div id="tab-journal" class="tab-content">
+                <div class="card">
+                    <h3>Journal des Écritures</h3>
+                    <table>
+                        <thead><tr><th>Date</th><th>Libellé</th><th>Débit</th><th>Crédit</th><th>Montant</th><th>Flux</th></tr></thead>
+                        <tbody id="journal-list"><tr><td colspan="6" style="text-align:center;">Chargement...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ONGLET GRAND LIVRE -->
+            <div id="tab-grand-livre" class="tab-content">
+                <div class="card">
+                    <h3>Grand Livre Général</h3>
+                    <table>
+                        <thead><tr><th>Compte Débité</th><th>Compte Crédité</th><th>Date</th><th>Libellé</th><th>Montant</th></tr></thead>
+                        <tbody id="grandlivre-list"><tr><td colspan="5" style="text-align:center;">Chargement...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ONGLET BALANCE -->
+            <div id="tab-balance" class="tab-content">
+                <div class="card">
+                    <h3>Balance Générale des Comptes</h3>
+                    <table>
+                        <thead><tr><th>N° Compte</th><th>Total Débit</th><th>Total Crédit</th><th>Solde</th></tr></thead>
+                        <tbody id="balance-list"><tr><td colspan="4" style="text-align:center;">Chargement...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ONGLET RESULTAT -->
+            <div id="tab-resultat" class="tab-content">
+                <div class="card">
+                    <h3>Compte de Résultat</h3>
+                    <div id="resultat-content" style="display: grid; gap: 15px; margin-top: 15px;">
+                        <p>Calcul en cours...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ONGLET CLOTURE -->
+            <div id="tab-cloture" class="tab-content">
+                <div class="card" style="text-align: center; padding: 40px;">
+                    <h3>Clôture de l'Exercice Comptable</h3>
+                    <p style="color: #64748b; margin: 15px 0;">La clôture fige les écritures en cours et valide l'exercice financier de l'agence.</p>
+                    <button class="btn-primary" onclick="executerCloture()" style="background: #ef4444; padding: 12px 25px;"><i class="fa-solid fa-lock"></i> Exécuter la clôture des comptes</button>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
-        function toggleFormulaire() {
-            const form = document.getElementById('form-container');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            if(tabId === 'caisse') chargerCaisse();
+            if(tabId === 'journal') chargerJournal();
+            if(tabId === 'grand-livre') chargerGrandLivre();
+            if(tabId === 'balance') chargerBalance();
+            if(tabId === 'resultat') chargerResultat();
         }
 
-        function switchTab(tab) {
-            const jDiv = document.getElementById('tab-journal');
-            const sDiv = document.getElementById('tab-synthese');
-            const btnJ = document.getElementById('btn-journal');
-            const btnS = document.getElementById('btn-synthese');
-
-            if (tab === 'journal') {
-                jDiv.style.display = 'block';
-                sDiv.style.display = 'none';
-                btnJ.style.background = '#0284c7';
-                btnS.style.background = '#64748b';
-                chargerJournal();
-            } else {
-                jDiv.style.display = 'none';
-                sDiv.style.display = 'block';
-                btnS.style.background = '#0284c7';
-                btnJ.style.background = '#64748b';
-                chargerSynthese();
-            }
-        }
-
-        function chargerJournal() {
-            fetch('/api/comptabilite/journal')
-                .then(res => res.json())
-                .then(data => {
-                    const tbody = document.getElementById('journal-list');
-                    if (!tbody) return;
-                    if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #64748b;">Aucune écriture comptable enregistrée.</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = data.map(e => `
-                        <tr>
-                            <td>${e.date_operation ? e.date_operation.substring(0, 10) : ''}</td>
-                            <td><strong>${e.libelle || ''}</strong></td>
-                            <td>${e.compte_debit || ''}</td>
-                            <td>${e.compte_credit || ''}</td>
-                            <td><strong>${parseFloat(e.montant || 0).toLocaleString()} $</strong></td>
-                            <td><span class="badge ${e.type_flux === 'Encaissement' ? 'badge-success' : 'badge-warning'}">${e.type_flux || ''}</span></td>
-                        </tr>
-                    `).join('');
-                });
-        }
-
-        function chargerSynthese() {
-            fetch('/api/comptabilite/synthese')
-                .then(res => res.json())
-                .then(data => {
-                    const container = document.getElementById('synthese-content');
-                    if (!container) return;
-                    container.innerHTML = `
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
-                            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
-                                <h4 style="color: #64748b; font-size: 14px;">Total Produits (Recettes)</h4>
-                                <p style="font-size: 24px; font-weight: bold; color: #10b981; margin-top: 5px;">${parseFloat(data.totalProduits || 0).toLocaleString()} $</p>
-                            </div>
-                            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
-                                <h4 style="color: #64748b; font-size: 14px;">Total Charges (Dépenses)</h4>
-                                <p style="font-size: 24px; font-weight: bold; color: #ef4444; margin-top: 5px;">${parseFloat(data.totalCharges || 0).toLocaleString()} $</p>
-                            </div>
-                            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #0284c7;">
-                                <h4 style="color: #64748b; font-size: 14px;">Résultat Net</h4>
-                                <p style="font-size: 24px; font-weight: bold; color: #0284c7; margin-top: 5px;">${parseFloat(data.resultatNet || 0).toLocaleString()} $</p>
-                            </div>
-                        </div>
-                    `;
-                });
-        }
-
-        function ajouterEcriture(event) {
-            event.preventDefault();
-            const form = document.getElementById('form-ecriture');
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-
-            fetch('/api/comptabilite/ecriture', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            }).then(res => {
-                if (res.ok) {
-                    toggleFormulaire();
-                    form.reset();
-                    chargerJournal();
-                } else {
-                    alert("Erreur lors de l'enregistrement de l'écriture.");
-                }
+        function chargerCaisse() {
+            fetch('/api/caisse').then(res => res.json()).then(data => {
+                const tbody = document.getElementById('caisse-list');
+                if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Aucun mouvement.</td></tr>'; return; }
+                tbody.innerHTML = data.map(c => `<tr><td>${c.date_operation ? c.date_operation.substring(0,10) : ''}</td><td>${c.libelle}</td><td><span class="badge ${c.type_mouvement === 'Entree' ? 'badge-success' : 'badge-warning'}">${c.type_mouvement}</span></td><td><strong>${parseFloat(c.montant).toLocaleString()} $</strong></td></tr>`).join('');
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            chargerJournal();
-        });
+        function ajouterCaisse(e) {
+            e.preventDefault();
+            const form = e.target;
+            fetch('/api/caisse', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(Object.fromEntries(new FormData(form).entries()))
+            }).then(res => { if(res.ok) { form.reset(); chargerCaisse(); alert("Mouvement de caisse enregistré !"); } });
+        }
+
+        function chargerJournal() {
+            fetch('/api/comptabilite/journal').then(res => res.json()).then(data => {
+                const tbody = document.getElementById('journal-list');
+                if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Aucune écriture.</td></tr>'; return; }
+                tbody.innerHTML = data.map(j => `<tr><td>${j.date_operation ? j.date_operation.substring(0,10) : ''}</td><td>${j.libelle}</td><td>${j.compte_debit}</td><td>${j.compte_credit}</td><td><strong>${parseFloat(j.montant).toLocaleString()} $</strong></td><td>${j.type_flux || ''}</td></tr>`).join('');
+            });
+        }
+
+        function chargerGrandLivre() {
+            fetch('/api/comptabilite/grand-livre').then(res => res.json()).then(data => {
+                const tbody = document.getElementById('grandlivre-list');
+                if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Vide.</td></tr>'; return; }
+                tbody.innerHTML = data.map(g => `<tr><td>${g.compte_debit}</td><td>${g.compte_credit}</td><td>${g.date_operation ? g.date_operation.substring(0,10) : ''}</td><td>${g.libelle}</td><td><strong>${parseFloat(g.montant).toLocaleString()} $</strong></td></tr>`).join('');
+            });
+        }
+
+        function chargerBalance() {
+            fetch('/api/comptabilite/balance').then(res => res.json()).then(map => {
+                const tbody = document.getElementById('balance-list');
+                let html = '';
+                for(let compte in map) {
+                    let d = map[compte].debit;
+                    let c = map[compte].credit;
+                    let solde = d - c;
+                    html += `<tr><td><strong>${compte}</strong></td><td>${d.toLocaleString()} $</td><td>${c.toLocaleString()} $</td><td><strong>${solde.toLocaleString()} $</strong></td></tr>`;
+                }
+                tbody.innerHTML = html || '<tr><td colspan="4" style="text-align:center;">Aucune donnée.</td></tr>';
+            });
+        }
+
+        function chargerResultat() {
+            fetch('/api/comptabilite/resultat').then(res => res.json()).then(d => {
+                document.getElementById('resultat-content').innerHTML = `
+                    <div style="background:#f8fafc; padding:15px; border-radius:6px; border-left:4px solid #10b981;"><h4>Total Produits (Classe 7)</h4><p style="font-size:20px; color:#10b981; font-weight:bold;">${d.produits.toLocaleString()} $</p></div>
+                    <div style="background:#f8fafc; padding:15px; border-radius:6px; border-left:4px solid #ef4444;"><h4>Total Charges (Classe 6)</h4><p style="font-size:20px; color:#ef4444; font-weight:bold;">${d.charges.toLocaleString()} $</p></div>
+                    <div style="background:#f8fafc; padding:15px; border-radius:6px; border-left:4px solid #0284c7;"><h4>Résultat Net de l'Exercice</h4><p style="font-size:22px; color:#0284c7; font-weight:bold;">${d.net.toLocaleString()} $</p></div>
+                `;
+            });
+        }
+
+        function executerCloture() {
+            if(confirm("Voulez-vous vraiment clôturer les écritures en cours ?")) {
+                fetch('/api/comptabilite/cloture', {method: 'POST'}).then(res => {
+                    if(res.ok) alert("Clôture effectuée avec succès !");
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { chargerCaisse(); });
     </script>
 </body>
 </html>
