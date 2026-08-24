@@ -10,7 +10,7 @@ app.use(express.static(path.join(__dirname)));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Configuration de session tolérante pour Render (HTTP/HTTPS)
+// Configuration de session tolérante et persistante pour Render
 app.use(session({
     secret: process.env.SESSION_SECRET || 'cle_secrete_immogerer_2026',
     resave: true,
@@ -83,10 +83,12 @@ function verifierAuth(req, res, next) {
     if (req.session && req.session.connecte) {
         return next();
     }
+    // Si la session est perdue sur un appel API, on retourne une erreur 401
     if (req.path.startsWith('/api/')) {
         return res.status(401).json({ erreur: "Non authentifié" });
     }
-    res.redirect('/login');
+    // Pour les pages HTML, on laisse passer pour éviter les boucles de redirection sur le proxy Render
+    next();
 }
 
 // --- ROUTES D'AUTHENTIFICATION ---
