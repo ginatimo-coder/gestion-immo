@@ -1,30 +1,161 @@
-function chargerPaiements() {
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finances & Paiements - ImmoGérer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-building-shield"></i> ImmoGérer
+            </div>
+            <ul>
+                <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+                <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
+                <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
+                <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+                <li><a href="/paiements" class="active"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+                <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
+                <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header">
+                <h1>Finances & Paiements</h1>
+                <button class="btn-primary" onclick="toggleFormulaire()">
+                    <i class="fa-solid fa-plus"></i> Enregistrer un paiement
+                </button>
+            </header>
+
+            <!-- Formulaire d'ajout -->
+            <div id="form-container" class="form-container" style="display: none;">
+                <h3 style="margin-bottom: 20px; color: #0284c7;">Nouveau Paiement de Loyer</h3>
+                <form action="/api/paiements" method="POST">
+                    <div class="form-group">
+                        <label>Locataire :</label>
+                        <select name="locataire_id" id="select-locataires" required>
+                            <option value="">Chargement...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Bien Immobilier :</label>
+                        <select name="bien_id" id="select-biens" required>
+                            <option value="">Chargement...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date du paiement :</label>
+                        <input type="date" name="date_paiement" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Montant ($) :</label>
+                        <input type="number" step="0.01" name="montant" required placeholder="Ex: 500">
+                    </div>
+                    <div class="form-group">
+                        <label>Statut :</label>
+                        <select name="statut">
+                            <option value="Payé">Payé</option>
+                            <option value="En retard">En retard</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">Enregistrer le paiement</button>
+                </form>
+            </div>
+
+            <!-- Liste des Paiements -->
+            <div class="card">
+                <h3 style="margin-bottom: 20px; color: #1e293b;">Historique des Paiements</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Locataire</th>
+                                <th>Bien</th>
+                                <th>Date</th>
+                                <th>Montant</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paiements-list">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: #64748b;">Chargement des données...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleFormulaire() {
+            const form = document.getElementById('form-container');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function chargerDonneesFormulaire() {
+            fetch('/api/locataires')
+                .then(res => res.json())
+                .then(locataires => {
+                    const selectL = document.getElementById('select-locataires');
+                    if(selectL) selectL.innerHTML = locataires.map(l => `<option value="${l.id}">${l.nom} ${l.prenom}</option>`).join('');
+                });
+
+            fetch('/api/biens')
+                .then(res => res.json())
+                .then(biens => {
+                    const selectB = document.getElementById('select-biens');
+                    if(selectB) selectB.innerHTML = biens.map(b => `<option value="${b.id}">${b.nom_bien} (${b.loyer}$)</option>`).join('');
+                });
+        }
+
+        function chargerPaiements() {
             fetch('/api/paiements')
                 .then(res => res.json())
                 .then(data => {
                     const tbody = document.getElementById('paiements-list');
+                    if (!tbody) return;
+
                     if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Aucun paiement enregistré.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #64748b;">Aucun paiement enregistré.</td></tr>';
                         return;
                     }
                     tbody.innerHTML = data.map(p => `
                         <tr>
-                            <td>${p.locataire_nom || ''} ${p.locataire_prenom || ''}</td>
+                            <td><strong>${p.locataire_nom || ''} ${p.locataire_prenom || ''}</strong></td>
                             <td>${p.nom_bien || ''}</td>
-                            <td>${p.date_paiement?.substring(0, 10) || ''}</td>
-                            <td><strong>${p.montant || 0} $</strong></td>
+                            <td>${p.date_paiement ? p.date_paiement.substring(0, 10) : ''}</td>
+                            <td><strong>${parseFloat(p.montant || 0).toLocaleString()} $</strong></td>
                             <td><span class="badge ${p.statut === 'Payé' ? 'badge-success' : 'badge-warning'}">${p.statut || 'Payé'}</span></td>
                             <td>
                                 <button class="btn-action btn-delete" onclick="supprimerPaiement(${p.id})">Supprimer</button>
                             </td>
                         </tr>
                     `).join('');
-                })
-                .catch(err => {
-                    // C'est ici que la gestion de session expirée doit se trouver, rattachée au fetch
-                    console.warn("Session expirée ou non connecté, redirection vers le login...");
-                    window.location.href = '/login';
                 });
         }
 
-        chargerPaiements();
+        function supprimerPaiement(id) {
+            if (confirm("Voulez-vous vraiment supprimer ce paiement ?")) {
+                fetch(`/api/paiements/${id}`, { method: 'DELETE' })
+                    .then(res => {
+                        if (res.ok) chargerPaiements();
+                    });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            chargerPaiements();
+            chargerDonneesFormulaire();
+        });
+    </script>
+</body>
+</html>
