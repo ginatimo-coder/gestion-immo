@@ -1,148 +1,30 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestion des Paiements - ImmoGérer</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-    <div class="app-container">
-        <aside class="sidebar">
-    <div class="brand">
-        <i class="fa-solid fa-building-shield"></i>
-        <h2>ImmoGérer</h2>
-    </div>
-    <ul>
-        <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
-        <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
-        <li><a href="/biens"><i class="fa-solid fa-city"></i> Biens immobiliers</a></li>
-        <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
-        <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-        <li><a href="/comptabilite"><i class="fa-solid fa-calculator"></i> Comptabilité Générale</a></li>
-        <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
-    </ul>
-</aside>
-        <main class="main-content">
-            <header><h1>Comptabilité & Paiements</h1></header>
-            <div class="form-container">
-                <h3>Enregistrer un paiement</h3>
-                <form action="/api/paiements" method="POST">
-                    <div class="form-group">
-                        <label>Locataire :</label>
-                        <select name="locataire_id" id="select-locataire" required><option value="">Chargement...</option></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Bien concerné :</label>
-                        <select name="bien_id" id="select-bien" required><option value="">Chargement...</option></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Date de paiement :</label>
-                        <input type="date" name="date_paiement" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Montant ($) :</label>
-                        <input type="number" step="0.01" name="montant" required placeholder="ex: 500">
-                    </div>
-                    <div class="form-group">
-                        <label>Statut :</label>
-                        <select name="statut">
-                            <option value="Payé">Payé</option>
-                            <option value="Partiel">Partiel</option>
-                            <option value="En retard">En retard</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn-primary">Enregistrer le paiement</button>
-                </form>
-            </div>
-            <section class="card" style="max-width: 100%; overflow-x: auto;">
-                <h3>Historique des Paiements</h3>
-                <table>
-                    <thead>
-                        <tr><th>Locataire</th><th>Bien</th><th>Date</th><th>Montant</th><th>Statut</th><th>Actions</th></tr>
-                    </thead>
-                    <tbody id="paiements-list"></tbody>
-                </table>
-            </section>
-        </main>
-    </div>
-    <script>
-        fetch('/api/locataires').then(res => res.json()).then(data => {
-            document.getElementById('select-locataire').innerHTML = data.map(l => `<option value="${l.id}">${l.nom} ${l.prenom}</option>`).join('');
-        });
-        fetch('/api/biens').then(res => res.json()).then(data => {
-            document.getElementById('select-bien').innerHTML = data.map(b => `<option value="${b.id}">${b.nom_bien}</option>`).join('');
-        });
-
-        function chargerPaiements() {
-            fetch('/api/paiements').then(res => res.json()).then(data => {
-                const tbody = document.getElementById('paiements-list');
-                tbody.innerHTML = data.length === 0 ? '<tr><td colspan="6" style="text-align:center;">Aucun paiement enregistré.</td></tr>' : 
-                    data.map(p => `<tr data-id="${p.id}">
-                        <td class="editable" data-field="locataire_nom">${p.locataire_nom} ${p.locataire_prenom}</td>
-                        <td class="editable" data-field="nom_bien">${p.nom_bien}</td>
-                        <td class="editable" data-field="date_paiement">${p.date_paiement?.substring(0,10)}</td>
-                        <td class="editable" data-field="montant">${p.montant} $</td>
-                        <td><span style="padding: 3px 8px; border-radius: 4px; background: ${p.statut === 'Payé' ? '#d1fae5' : '#fef3c7'}; color: ${p.statut === 'Payé' ? '#065f46' : '#92400e'};">${p.statut}</span></td>
-                        <td>
-                            <button class="btn-action btn-receipt" onclick="genererReçu(${p.montant}, '${p.locataire_nom} ${p.locataire_prenom}', '${p.nom_bien}', '${p.date_paiement?.substring(0,10)}')">Reçu</button>
-                            <button class="btn-action btn-edit" onclick="modifierPaiement(${p.id}, this)">Modifier</button>
-                            <button class="btn-action btn-delete" onclick="supprimerPaiement(${p.id})">Supprimer</button>
-                        </td>
-                    </tr>`).join('');
-            });
-        }
-
-        function genererReçu(montant, locataire, bien, date) {
-            const win = window.open('', '_blank');
-            win.document.write(`
-                <html><head><title>Reçu de Paiement</title>
-                <style>body{font-family:Arial;padding:30px;max-width:600px;margin:auto;border:1px solid #ccc;border-radius:8px;}
-                h2{color:#0ea5e9;text-align:center;}</style></head>
-                <body>
-                    <h2>REÇU DE PAIEMENT - ImmoGérer</h2>
-                    <hr>
-                    <p><strong>Date :</strong> ${date}</p>
-                    <p><strong>Locataire :</strong> ${locataire}</p>
-                    <p><strong>Bien concerné :</strong> ${bien}</p>
-                    <p><strong>Montant payé :</strong> ${montant} $</p>
-                    <p><strong>Statut :</strong> Payé en totalité</p>
-                    <br><br><p style="text-align:right;">Signature / Cachet</p>
-                </body></html>
-            `);
-            win.document.close();
-            win.print();
-        }
-
-        function modifierPaiement(id, btn) {
-            const tr = btn.closest('tr');
-            const montantTd = tr.children[3];
-            if(btn.innerText === "Modifier") {
-                const val = montantTd.innerText.replace(' $', '');
-                montantTd.innerHTML = `<input type="number" value="${val}" style="width: 80px; padding:4px;">`;
-                btn.innerText = "Enregistrer";
-                btn.className = "btn-action btn-primary";
-            } else {
-                const input = montantTd.querySelector('input');
-                const nouveauMontant = input.value;
-                fetch(`/api/paiements/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ montant: nouveauMontant })
-                }).then(res => { if(res.ok) chargerPaiements(); else alert("Erreur modification"); });
-            }
-        }
-
-        function supprimerPaiement(id) {
-            if(confirm("Voulez-vous supprimer ce paiement ?")) {
-                fetch(`/api/paiements/${id}`, { method: 'DELETE' }).then(() => chargerPaiements());
-            }
+function chargerPaiements() {
+            fetch('/api/paiements')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('paiements-list');
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Aucun paiement enregistré.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = data.map(p => `
+                        <tr>
+                            <td>${p.locataire_nom || ''} ${p.locataire_prenom || ''}</td>
+                            <td>${p.nom_bien || ''}</td>
+                            <td>${p.date_paiement?.substring(0, 10) || ''}</td>
+                            <td><strong>${p.montant || 0} $</strong></td>
+                            <td><span class="badge ${p.statut === 'Payé' ? 'badge-success' : 'badge-warning'}">${p.statut || 'Payé'}</span></td>
+                            <td>
+                                <button class="btn-action btn-delete" onclick="supprimerPaiement(${p.id})">Supprimer</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(err => {
+                    // C'est ici que la gestion de session expirée doit se trouver, rattachée au fetch
+                    console.warn("Session expirée ou non connecté, redirection vers le login...");
+                    window.location.href = '/login';
+                });
         }
 
         chargerPaiements();
-        console.warn("Session expirée ou non connecté, redirection vers le login...");
-            window.location.href = '/login';
-        });
-    </script>
-</body>
-</html>
