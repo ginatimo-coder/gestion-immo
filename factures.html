@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factures & Proformas - ImmoGérer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand"><i class="fa-solid fa-building-shield"></i> ImmoGérer</div>
+            <ul>
+                <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+                <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
+                <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
+                <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+                <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+                <li><a href="/factures" class="active"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
+                <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
+                <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <h1>Factures & Proformas</h1>
+                <button class="btn-primary" onclick="toggleFormulaire()"><i class="fa-solid fa-plus"></i> Créer un document</button>
+            </header>
+
+            <div id="form-container" class="form-container" style="display: none;">
+                <h3 style="margin-bottom: 20px; color: #0284c7;">Nouvelle Facture / Proforma</h3>
+                <form action="/api/factures" method="POST">
+                    <div class="form-group">
+                        <label>Type de document :</label>
+                        <select name="type" required>
+                            <option value="Facture">Facture</option>
+                            <option value="Proforma">Proforma</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Locataire :</label>
+                        <select name="locataire_id" id="select-locataires" required><option value="">Chargement...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Bien :</label>
+                        <select name="bien_id" id="select-biens" required><option value="">Chargement...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date :</label>
+                        <input type="date" name="date_emission" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Montant ($) :</label>
+                        <input type="number" step="0.01" name="montant" required placeholder="Ex: 500">
+                    </div>
+                    <div class="form-group">
+                        <label>Statut :</label>
+                        <select name="statut">
+                            <option value="Impayée">Impayée</option>
+                            <option value="Payée">Payée</option>
+                            <option value="Validée">Validée (Proforma)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">Enregistrer le document</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 20px; color: #1e293b;">Liste des documents émis</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Locataire</th>
+                                <th>Bien</th>
+                                <th>Date</th>
+                                <th>Montant</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="factures-list">
+                            <tr><td colspan="7" style="text-align: center; color: #64748b;">Chargement...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleFormulaire() {
+            const form = document.getElementById('form-container');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function chargerDonnees() {
+            fetch('/api/locataires').then(res => res.json()).then(locataires => {
+                document.getElementById('select-locataires').innerHTML = locataires.map(l => `<option value="${l.id}">${l.nom} ${l.prenom}</option>`).join('');
+            });
+            fetch('/api/biens').then(res => res.json()).then(biens => {
+                document.getElementById('select-biens').innerHTML = biens.map(b => `<option value="${b.id}">${b.nom_bien}</option>`).join('');
+            });
+        }
+
+        function chargerFactures() {
+            fetch('/api/factures').then(res => res.json()).then(data => {
+                const tbody = document.getElementById('factures-list');
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: #64748b;">Aucun document enregistré.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.map(f => `
+                    <tr>
+                        <td><strong><span class="badge ${f.type === 'Facture' ? 'badge-success' : 'badge-warning'}">${f.type}</span></strong></td>
+                        <td>${f.locataire_nom} ${f.locataire_prenom}</td>
+                        <td>${f.nom_bien}</td>
+                        <td>${f.date_emission ? f.date_emission.substring(0, 10) : ''}</td>
+                        <td><strong>${parseFloat(f.montant).toLocaleString()} $</strong></td>
+                        <td>${f.statut}</td>
+                        <td>
+                            <button class="btn-action" style="background:#0284c7; color:white;" onclick="imprimerDoc('${f.type}', '${f.locataire_nom} ${f.locataire_prenom}', '${f.nom_bien}', '${f.montant}', '${f.date_emission}')"><i class="fa-solid fa-print"></i> Imprimer</button>
+                            <button class="btn-action btn-delete" onclick="supprimerFacture(${f.id})">Supprimer</button>
+                        </td>
+                    </tr>
+                `).join('');
+            });
+        }
+
+        function imprimerDoc(type, locataire, bien, montant, date) {
+            const fenetre = window.open('', '_blank');
+            fenetre.document.write(`
+                <html>
+                <head><title>${type}</title><style>body{font-family:Arial; padding:40px;}</style></head>
+                <body>
+                    <h1 style="color:#0284c7;">IMMODÉRATEUR / IMMOGÉRER</h1>
+                    <h2>${type.toUpperCase()}</h2>
+                    <hr>
+                    <p><strong>Date :</strong> ${date ? date.substring(0,10) : ''}</p>
+                    <p><strong>Locataire :</strong> ${locataire}</p>
+                    <p><strong>Bien concerné :</strong> ${bien}</p>
+                    <hr>
+                    <h3>Montant total : ${parseFloat(montant).toLocaleString()} $</h3>
+                    <br><br><br>
+                    <p style="text-align:right;">Signature & Cachet</p>
+                </body>
+                </html>
+            `);
+            fenetre.document.close();
+            fenetre.print();
+        }
+
+        function supprimerFacture(id) {
+            if (confirm("Supprimer ce document ?")) {
+                fetch(`/api/factures/${id}`, { method: 'DELETE' }).then(res => { if(res.ok) chargerFactures(); });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            chargerFactures();
+            chargerDonnees();
+        });
+    </script>
+</body>
+</html>
