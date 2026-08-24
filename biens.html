@@ -1,98 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biens Immobiliers - ImmoGérer</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="brand">
-                <i class="fa-solid fa-building-shield"></i> ImmoGérer
-            </div>
-            <ul>
-                <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
-                <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
-                <li><a href="/biens" class="active"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
-                <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
-                <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-                <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
-                <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
-            </ul>
-        </aside>
-
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <header class="top-header">
-                <h1>Gestion des Biens Immobiliers</h1>
-                <button class="btn-primary" onclick="toggleFormulaire()">
-                    <i class="fa-solid fa-plus"></i> Ajouter un bien
-                </button>
-            </header>
-
-            <!-- Formulaire d'ajout (Caché par défaut) -->
-            <div id="form-container" class="form-container" style="display: none;">
-                <h3 style="margin-bottom: 20px; color: #0284c7;">Nouveau Bien Immobilier</h3>
-                <form action="/api/biens" method="POST">
-                    <div class="form-group">
-                        <label>Nom ou Référence du Bien :</label>
-                        <input type="text" name="nom_bien" required placeholder="Ex: Appartement A1 - Résidence Lumière">
-                    </div>
-                    <div class="form-group">
-                        <label>Type de bien :</label>
-                        <select name="type" required>
-                            <option value="Appartement">Appartement</option>
-                            <option value="Villa">Villa</option>
-                            <option value="Studio">Studio</option>
-                            <option value="Local Commercial">Local Commercial</option>
-                            Entrepot
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Loyer mensuel ($) :</label>
-                        <input type="number" step="0.01" name="loyer" required placeholder="Ex: 500">
-                    </div>
-                    <div class="form-group">
-                        <label>Statut initial :</label>
-                        <select name="statut">
-                            <option value="Libre">Libre</option>
-                            <option value="Loué">Loué</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn-primary">Enregistrer le bien</button>
-                </form>
-            </div>
-
-            <!-- Liste des Biens -->
-            <div class="card">
-                <h3 style="margin-bottom: 20px; color: #1e293b;">Liste de vos biens</h3>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nom / Référence</th>
-                                <th>Type</th>
-                                <th>Loyer Mensuel</th>
-                                <th>Statut</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="biens-list">
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: #64748b;">Chargement des données...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script>
+<script>
         function toggleFormulaire() {
             const form = document.getElementById('form-container');
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
@@ -103,6 +9,8 @@
                 .then(res => res.json())
                 .then(data => {
                     const tbody = document.getElementById('biens-list');
+                    if (!tbody) return; // Sécurité si l'élément n'est pas encore prêt
+                    
                     if (data.length === 0) {
                         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #64748b;">Aucun bien immobilier enregistré.</td></tr>';
                         return;
@@ -137,8 +45,8 @@
             }
         }
 
-        // Charger les biens au démarrage de la page
-        chargerBiens();
+        // S'assure que le DOM est totalement chargé avant de lancer la fonction
+        document.addEventListener('DOMContentLoaded', () => {
+            chargerBiens();
+        });
     </script>
-</body>
-</html>
