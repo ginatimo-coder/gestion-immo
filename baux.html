@@ -139,51 +139,86 @@
                     `).join('');
                 });
         }
+function genererContratBail(locataire, bien, debut, fin) {
+    const fenetre = window.open('', '_blank');
+    fenetre.document.write(`
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+            <meta charset="UTF-8">
+            <title>Contrat de Location - ImmoGérer</title>
+            <style>
+                body { 
+                    font-family: 'Times New Roman', serif; 
+                    padding: 40px; 
+                    line-height: 1.5; 
+                    color: #111; 
+                    max-width: 800px; 
+                    margin: auto;
+                    font-size: 14px;
+                }
+                .header-doc { text-align: center; margin-bottom: 30px; }
+                .header-doc h1 { font-size: 18px; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; }
+                .header-doc h2 { font-size: 14px; font-weight: normal; color: #555; }
+                .section-title { font-weight: bold; text-transform: uppercase; margin-top: 20px; margin-bottom: 8px; font-size: 13px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+                p { margin: 6px 0; text-align: justify; }
+                .signatures { margin-top: 50px; display: flex; justify-content: space-between; page-break-inside: avoid; }
+                .signature-box { width: 45%; text-align: center; }
+                .signature-line { margin-top: 70px; border-top: 1px dashed #777; padding-top: 5px; }
+            </style>
+        </head>
+        <body>
+            <div class="header-doc">
+                <h1>CONTRAT DE LOCATION IMMOBILIÈRE</h1>
+                <h2>Régie par les dispositions légales en vigueur</h2>
+            </div>
 
-        function genererContratBail(locataire, bien, debut, fin) {
-            const fenetre = window.open('', '_blank');
-            fenetre.document.write(`
-                <html>
-                <head>
-                    <title>Contrat de Bail</title>
-                    <style>
-                        body { font-family: 'Times New Roman', serif; padding: 50px; line-height: 1.6; color: #333; }
-                        h1 { text-align: center; text-transform: uppercase; margin-bottom: 30px; }
-                        .section { margin-bottom: 20px; }
-                    </style>
-                </head>
-                <body>
-                    <h1>CONTRAT DE LOCATION IMMOBILIÈRE</h1>
-                    <div class="section">
-                        <p>Entre les soussignés :</p>
-                        <p><strong>Le Bailleur :</strong> La société de gestion immobilière ImmoGérer</p>
-                        <p><strong>Et le Locataire :</strong> ${locataire}</p>
-                    </div>
-                    <div class="section">
-                        <p>Il a été convenu ce qui suit concernant le bien immobilier désigné ci-dessous :</p>
-                        <p><strong>Bien loué :</strong> ${bien}</p>
-                        <p><strong>Date de prise d'effet :</strong> ${debut ? debut.substring(0, 10) : ''}</p>
-                        <p><strong>Date de fin :</strong> ${fin.substring(0, 10)}</p>
-                    </div>
-                    <div class="section">
-                        <p>Le locataire s'engage à respecter les termes et conditions du présent bail, notamment le paiement ponctuel du loyer convenu.</p>
-                    </div>
-                    <br><br><br>
-                    <table width="100%">
-                        <tr>
-                            <td align="center">Fait à __________, le ${new Date().toLocaleDateString()}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding-top: 50px;"><br><br><strong>Signature du Bailleur</strong></td>
-                            <td align="right" style="padding-top: 50px;"><br><br><strong>Signature du Locataire</strong></td>
-                        </tr>
-                    </table>
-                </body>
-                </html>
-            `);
-            fenetre.document.close();
-            fenetre.print();
-        }
+            <div class="section-title">1. Désignation des parties</div>
+            <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
+            <p>La société de gestion immobilière <strong>ImmoGérer</strong>, ci-après dénommée le « Bailleur », d'une part,</p>
+            <p>Et <strong>${locataire}</strong>, ci-après dénommé le « Locataire », d'autre part,</p>
+            <p>Il a été convenu et arrêté ce qui suit :</p>
+
+            <div class="section-title">2. Objet du contrat</div>
+            <p>Le présent contrat a pour objet la location à usage d'habitation (ou professionnel) du bien immobilier désigné ci-après :</p>
+            <p><strong>Désignation du bien :</strong> ${bien}</p>
+            <p>Le locataire déclare bien connaître les lieux pour les avoir visités préalablement à la signature des présentes.</p>
+
+            <div class="section-title">3. Durée du bail</div>
+            <p>Le présent bail est consenti et accepté pour une durée de <strong>${fin === 'Indéterminée' ? 'durée indéterminée' : 'période déterminée'}</strong>, prenant effet à compter du <strong>${debut ? debut.substring(0, 10) : ''}</strong> pour s'achever le <strong>${fin !== 'Indéterminée' ? fin.substring(0, 10) : 'Indéterminée'}</strong>.</p>
+
+            <div class="section-title">4. Conditions financières</div>
+            <p>La présente location est consentie moyennant le paiement mensuel d'un loyer convenu entre les parties, payable au plus tard le 5 de chaque mois.</p>
+            <p>Tout retard de paiement injustifié entraînera l'application des pénalités d'usage et de mise en demeure prévues par la loi.</p>
+
+            <div class="section-title">5. Obligations et charges</div>
+            <p>Le locataire s'engage à :</p>
+            <p>- User des lieux loués en bon père de famille / en bon occupant et à n'y exercer aucune activité illicite ou troublant la tranquillité du voisinage.</p>
+            <p>- Maintenir les lieux en parfait état d'entretien et supporter les réparations locatives et d'entretien courant.</p>
+            <p>- Ne opérer aucune modification structurelle des locaux sans l'accord préalable et écrit du Bailleur.</p>
+
+            <div class="section-title">6. Clauses résolutoires</div>
+            <p>À défaut de paiement de loyer à son échéance exacte ou en cas d'inexécution de l'une des clauses du présent bail, celui-ci sera résilié de plein droit après un délai de mise en demeure resté sans effet.</p>
+
+            <br>
+            <p>Fait en double exemplaire à __________, le ${new Date().toLocaleDateString()}</p>
+
+            <div class="signatures">
+                <div class="signature-box">
+                    <p><strong>Le Bailleur</strong></p>
+                    <div class="signature-line">(Signature & Cachet)</div>
+                </div>
+                <div class="signature-box">
+                    <p><strong>Le Locataire</strong></p>
+                    <div class="signature-line">(Signature précédée de la mention "Lu et approuvé")</div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
+    fenetre.document.close();
+    fenetre.print();
+}
 
         function supprimerBail(id) {
             if (confirm("Voulez-vous vraiment résilier ce bail ? Le bien redeviendra libre.")) {
