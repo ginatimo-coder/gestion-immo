@@ -16,8 +16,8 @@
         main { margin-left: 260px; padding: 30px; width: calc(100% - 260px); box-sizing: border-box; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid #e5e7eb; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; }
-        th { background-color: #f9fafb; color: #374151; font-size: 14px; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+        th { background-color: #f9fafb; color: #374151; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px; }
         input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
@@ -25,12 +25,23 @@
         button:hover { background: #0369a1; }
         .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 13px; }
         .btn-danger:hover { background: #b91c1c; }
+        .btn-warning { background: #d97706; padding: 6px 12px; font-size: 13px; color: white; }
+        .btn-warning:hover { background: #b45309; }
+        .btn-print { background: #4f46e5; padding: 6px 12px; font-size: 13px; color: white; }
+        .btn-print:hover { background: #4338ca; }
         .info-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #166534; }
+
+        /* Style spécifique pour l'impression du bulletin */
+        @media print {
+            aside, .nav-menu, form, button, .card:not(#section-bulletin-print) { display: none !important; }
+            main { margin: 0; padding: 0; width: 100%; }
+            .bulletin-container { border: 2px solid #000; padding: 30px; background: white; width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Menu Latéral Identique -->
+    <!-- Menu Latéral -->
     <aside>
         <div class="logo-area">
             <i class="fa-solid fa-building-shield"></i> ImmoGérer
@@ -52,57 +63,39 @@
     <main>
         <h2>Ressources Humaines & Gestion de la Paie (RDC)</h2>
 
-        <!-- Section 1 : Enregistrement d'un Employé -->
+        <!-- Section 1 : Formulaire Employé (Ajout / Modification) -->
         <div class="card">
-            <h3>Ajouter un nouvel employé</h3>
-            <form action="/api/employes" method="POST">
+            <h3 id="form-title">Ajouter un nouvel employé</h3>
+            <form id="employe-form" onsubmit="enregistrerEmploye(event)">
+                <input type="hidden" id="employe_id_edit">
                 <div class="form-grid">
-                    <div>
-                        <label>Nom :</label>
-                        <input type="text" name="nom" required>
-                    </div>
-                    <div>
-                        <label>Prénom :</label>
-                        <input type="text" name="prenom" required>
-                    </div>
-                    <div>
-                        <label>Email :</label>
-                        <input type="email" name="email">
-                    </div>
-                    <div>
-                        <label>Téléphone :</label>
-                        <input type="text" name="telephone">
-                    </div>
-                    <div>
-                        <label>Poste :</label>
-                        <input type="text" name="poste" required>
-                    </div>
-                    <div>
-                        <label>Département :</label>
-                        <input type="text" name="departement">
-                    </div>
-                    <div>
-                        <label>Date d'embauche :</label>
-                        <input type="date" name="date_embauche">
-                    </div>
+                    <div><label>Nom :</label><input type="text" id="nom" required></div>
+                    <div><label>Prénom :</label><input type="text" id="prenom" required></div>
+                    <div><label>Email :</label><input type="email" id="email"></div>
+                    <div><label>Téléphone :</label><input type="text" id="telephone"></div>
+                    <div><label>Adresse :</label><input type="text" id="adresse"></div>
+                    <div><label>Lieu de naissance :</label><input type="text" id="lieu_naissance"></div>
+                    <div><label>Date de naissance :</label><input type="date" id="date_naissance"></div>
+                    <div><label>Enfants à charge :</label><input type="number" id="enfants_charges" value="0" min="0"></div>
+                    <div><label>Poste :</label><input type="text" id="poste" required></div>
+                    <div><label>Département :</label><input type="text" id="departement"></div>
+                    <div><label>Date d'embauche :</label><input type="date" id="date_embauche"></div>
                     <div>
                         <label>Type de Contrat :</label>
-                        <select name="type_contrat">
+                        <select id="type_contrat">
                             <option value="CDI">CDI</option>
                             <option value="CDD">CDD</option>
                             <option value="Stage">Stage</option>
                         </select>
                     </div>
-                    <div>
-                        <label>Salaire de Base :</label>
-                        <input type="number" step="0.01" name="salaire_base" required>
-                    </div>
+                    <div><label>Salaire de Base ($) :</label><input type="number" step="0.01" id="salaire_base" required></div>
                 </div>
-                <button type="submit">Enregistrer l'employé</button>
+                <button type="submit" id="btn-submit-emp">Enregistrer l'employé</button>
+                <button type="button" id="btn-cancel-edit" style="background: #6b7280; display: none; margin-left: 10px;" onclick="resetFormulaire()">Annuler</button>
             </form>
         </div>
 
-        <!-- Section 2 : Liste des Employés -->
+        <!-- Section 2 : Annuaire du Personnel -->
         <div class="card">
             <h3>Annuaire du Personnel</h3>
             <table>
@@ -110,15 +103,13 @@
                     <tr>
                         <th>Nom & Prénom</th>
                         <th>Poste</th>
-                        <th>Département</th>
-                        <th>Contrat</th>
-                        <th>Salaire Base</th>
+                        <th>Infos Naissance / Adresse</th>
+                        <th>Enfants</th>
+                        <th>Contrat & Salaire</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="liste-employes">
-                    <!-- Chargé dynamiquement -->
-                </tbody>
+                <tbody id="liste-employes"></tbody>
             </table>
         </div>
 
@@ -126,59 +117,36 @@
         <div class="card">
             <h3>Générer un Bulletin de Paie</h3>
             <div class="info-box">
-                <i class="fa-solid fa-circle-info"></i> Paramètres RDC appliqués automatiquement : <strong>CNSS Salarial (3.5%)</strong>, <strong>IPR (30%)</strong> et <strong>ONEM Patronal (0.50%)</strong>.
+                <i class="fa-solid fa-circle-info"></i> Barème RDC : <strong>CNSS Salarial (3.5%)</strong>, <strong>IPR (30%)</strong> et <strong>ONEM Patronal (0.50%)</strong>.
             </div>
             <form action="/api/paie" method="POST">
                 <div class="form-grid">
                     <div>
                         <label>Employé :</label>
-                        <select name="employe_id" id="select-employe" required onchange="remplirSalaireBase()">
+                        <select name="employe_id" id="select-employe" required onchange="calculerNet()">
                             <option value="">-- Choisir un employé --</option>
                         </select>
                     </div>
                     <div>
                         <label>Mois :</label>
                         <select name="mois">
-                            <option value="Janvier">Janvier</option>
-                            <option value="Février">Février</option>
-                            <option value="Mars">Mars</option>
-                            <option value="Avril">Avril</option>
-                            <option value="Mai">Mai</option>
-                            <option value="Juin">Juin</option>
-                            <option value="Juillet">Juillet</option>
-                            <option value="Août">Août</option>
-                            <option value="Septembre">Septembre</option>
-                            <option value="Octobre">Octobre</option>
-                            <option value="Novembre">Novembre</option>
-                            <option value="Décembre">Décembre</option>
+                            <option value="Janvier">Janvier</option><option value="Février">Février</option><option value="Mars">Mars</option>
+                            <option value="Avril">Avril</option><option value="Mai">Mai</option><option value="Juin">Juin</option>
+                            <option value="Juillet">Juillet</option><option value="Août">Août</option><option value="Septembre">Septembre</option>
+                            <option value="Octobre">Octobre</option><option value="Novembre">Novembre</option><option value="Décembre">Décembre</option>
                         </select>
                     </div>
-                    <div>
-                        <label>Année :</label>
-                        <input type="number" name="annee" value="2026" required>
-                    </div>
-                    <div>
-                        <label>Primes (+) :</label>
-                        <input type="number" step="0.01" id="primes" name="primes" value="0" oninput="calculerNet()">
-                    </div>
-                    <div>
-                        <label>Heures Sup (+) :</label>
-                        <input type="number" step="0.01" id="heures_sup" name="heures_sup" value="0" oninput="calculerNet()">
-                    </div>
-                    <div>
-                        <label>Total Retenues (CNSS + IPR) (-):</label>
-                        <input type="number" step="0.01" id="charges_sociales" name="charges_sociales" readonly style="background: #f3f4f6;">
-                    </div>
-                    <div>
-                        <label><strong>Salaire Net à Payer :</strong></label>
-                        <input type="number" step="0.01" id="salaire_net" name="salaire_net" readonly style="background: #e6fffa; font-weight: bold; color: #047857;">
-                    </div>
+                    <div><label>Année :</label><input type="number" name="annee" value="2026" required></div>
+                    <div><label>Primes (+) :</label><input type="number" step="0.01" id="primes" name="primes" value="0" oninput="calculerNet()"></div>
+                    <div><label>Heures Sup (+) :</label><input type="number" step="0.01" id="heures_sup" name="heures_sup" value="0" oninput="calculerNet()"></div>
+                    <div><label>Total Retenues (-):</label><input type="number" step="0.01" id="charges_sociales" name="charges_sociales" readonly style="background: #f3f4f6;"></div>
+                    <div><label><strong>Salaire Net à Payer :</strong></label><input type="number" step="0.01" id="salaire_net" name="salaire_net" readonly style="background: #e6fffa; font-weight: bold; color: #047857;"></div>
                 </div>
                 <button type="submit">Valider et comptabiliser la paie</button>
             </form>
         </div>
 
-        <!-- Section 4 : Historique de la Paie -->
+        <!-- Section 4 : Historique et Version Imprimable -->
         <div class="card">
             <h3>Historique des Bulletins de Paie</h3>
             <table>
@@ -186,24 +154,23 @@
                     <tr>
                         <th>Employé</th>
                         <th>Période</th>
-                        <th>Primes</th>
-                        <th>Heures Sup</th>
+                        <th>Brut / Primes</th>
                         <th>Retenues</th>
                         <th>Net Versé</th>
-                        <th>Date</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="liste-paie">
-                    <!-- Chargé dynamiquement -->
-                </tbody>
+                <tbody id="liste-paie"></tbody>
             </table>
         </div>
     </main>
 
     <script>
+        let employesGlobal = [];
+
         async function chargerDonnees() {
             const resEmp = await fetch('/api/employes');
-            const employesData = await resEmp.json();
+            employesGlobal = await resEmp.json();
             
             const tbodyEmp = document.getElementById('liste-employes');
             const selectEmp = document.getElementById('select-employe');
@@ -211,15 +178,18 @@
             tbodyEmp.innerHTML = '';
             selectEmp.innerHTML = '<option value="">-- Choisir un employé --</option>';
 
-            (Array.isArray(employesData) ? employesData : []).forEach(e => {
+            (Array.isArray(employesGlobal) ? employesGlobal : []).forEach(e => {
                 tbodyEmp.innerHTML += `
                     <tr>
-                        <td><strong>${e.nom} ${e.prenom}</strong></td>
-                        <td>${e.poste}</td>
-                        <td>${e.departement || '-'}</td>
-                        <td>${e.type_contrat}</td>
-                        <td>${parseFloat(e.salaire_base).toLocaleString()} $</td>
-                        <td><button class="btn-danger" onclick="supprimerEmploye(${e.id})">Supprimer</button></td>
+                        <td><strong>${e.nom} ${e.prenom}</strong><br><small>${e.email || ''} - ${e.telephone || ''}</small></td>
+                        <td>${e.poste}<br><small>${e.departement || ''}</small></td>
+                        <td>Né(e) le ${e.date_naissance ? e.date_naissance.split('T')[0] : 'N/C'} à ${e.lieu_naissance || 'N/C'}<br><small>${e.adresse || ''}</small></td>
+                        <td>${e.enfants_charges} enfant(s)</td>
+                        <td>${e.type_contrat}<br><strong>${parseFloat(e.salaire_base).toLocaleString()} $</strong></td>
+                        <td>
+                            <button class="btn-warning" onclick="preparerModification(${e.id})">Modifier</button>
+                            <button class="btn-danger" onclick="supprimerEmploye(${e.id})">Supprimer</button>
+                        </td>
                     </tr>
                 `;
                 selectEmp.innerHTML += `<option value="${e.id}" data-salaire="${e.salaire_base}">${e.nom} ${e.prenom} (${e.poste})</option>`;
@@ -235,18 +205,80 @@
                     <tr>
                         <td>${p.nom} ${p.prenom}</td>
                         <td>${p.mois} ${p.annee}</td>
-                        <td>${parseFloat(p.primes).toLocaleString()} $</td>
-                        <td>${parseFloat(p.heures_sup).toLocaleString()} $</td>
+                        <td>Primes: ${parseFloat(p.primes).toLocaleString()} $</td>
                         <td>${parseFloat(p.charges_sociales).toLocaleString()} $</td>
                         <td><strong>${parseFloat(p.salaire_net).toLocaleString()} $</strong></td>
-                        <td>${p.date_paiement ? p.date_paiement.split('T')[0] : '-'}</td>
+                        <td>
+                            <button class="btn-print" onclick='imprimerBulletin(${JSON.stringify(p)})'>Imprimer Bulletin</button>
+                        </td>
                     </tr>
                 `;
             });
         }
 
-        function remplirSalaireBase() {
-            calculerNet();
+        async function enregistrerEmploye(event) {
+            event.preventDefault();
+            const id = document.getElementById('employe_id_edit').value;
+            const data = {
+                nom: document.getElementById('nom').value,
+                prenom: document.getElementById('prenom').value,
+                email: document.getElementById('email').value,
+                telephone: document.getElementById('telephone').value,
+                adresse: document.getElementById('adresse').value,
+                lieu_naissance: document.getElementById('lieu_naissance').value,
+                date_naissance: document.getElementById('date_naissance').value,
+                enfants_charges: document.getElementById('enfants_charges').value,
+                poste: document.getElementById('poste').value,
+                departement: document.getElementById('departement').value,
+                date_embauche: document.getElementById('date_embauche').value,
+                type_contrat: document.getElementById('type_contrat').value,
+                salaire_base: document.getElementById('salaire_base').value
+            };
+
+            const url = id ? `/api/employes/${id}` : '/api/employes';
+            const method = id ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            resetFormulaire();
+            chargerDonnees();
+        }
+
+        function preparerModification(id) {
+            const e = employesGlobal.find(emp => emp.id === id);
+            if (!e) return;
+
+            document.getElementById('employe_id_edit').value = e.id;
+            document.getElementById('nom').value = e.nom;
+            document.getElementById('prenom').value = e.prenom;
+            document.getElementById('email').value = e.email || '';
+            document.getElementById('telephone').value = e.telephone || '';
+            document.getElementById('adresse').value = e.adresse || '';
+            document.getElementById('lieu_naissance').value = e.lieu_naissance || '';
+            document.getElementById('date_naissance').value = e.date_naissance ? e.date_naissance.split('T')[0] : '';
+            document.getElementById('enfants_charges').value = e.enfants_charges || 0;
+            document.getElementById('poste').value = e.poste;
+            document.getElementById('departement').value = e.departement || '';
+            document.getElementById('date_embauche').value = e.date_embauche ? e.date_embauche.split('T')[0] : '';
+            document.getElementById('type_contrat').value = e.type_contrat;
+            document.getElementById('salaire_base').value = e.salaire_base;
+
+            document.getElementById('form-title').innerText = "Modifier l'employé : " + e.nom + " " + e.prenom;
+            document.getElementById('btn-submit-emp').innerText = "Mettre à jour";
+            document.getElementById('btn-cancel-edit').style.display = 'inline-block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetFormulaire() {
+            document.getElementById('employe-form').reset();
+            document.getElementById('employe_id_edit').value = '';
+            document.getElementById('form-title').innerText = "Ajouter un nouvel employé";
+            document.getElementById('btn-submit-emp').innerText = "Enregistrer l'employé";
+            document.getElementById('btn-cancel-edit').style.display = 'none';
         }
 
         function calculerNet() {
@@ -254,19 +286,17 @@
             if (!select.value) return;
             
             const selectedOption = select.options[select.selectedIndex];
-            const salaireBase = parseFloat(selectedOption.getAttribute('data-salaire')) || 0;
+            const employeId = parseInt(select.value);
+            const emp = employesGlobal.find(x => x.id === employeId);
+            const salaireBase = emp ? parseFloat(emp.salaire_base) || 0 : 0;
             
             const primes = parseFloat(document.getElementById('primes').value) || 0;
             const heuresSup = parseFloat(document.getElementById('heures_sup').value) || 0;
 
-            // Calcul du Brut
             const salaireBrut = salaireBase + primes + heuresSup;
-
-            // Application des taux RDC : CNSS (3.5%) + IPR (30%)
             const cnssSalarial = salaireBrut * 0.035;
             const ipr = salaireBrut * 0.30;
             const totalRetenues = cnssSalarial + ipr;
-
             const salaireNet = salaireBrut - totalRetenues;
 
             document.getElementById('charges_sociales').value = totalRetenues.toFixed(2);
@@ -278,6 +308,48 @@
                 await fetch(`/api/employes/${id}`, { method: 'DELETE' });
                 chargerDonnees();
             }
+        }
+
+        function imprimerBulletin(p) {
+            const fenetreImpression = window.open('', '_blank');
+            fenetreImpression.document.write(`
+                <html>
+                <head>
+                    <title>Bulletin de Paie - ${p.nom} ${p.prenom}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+                        .info-table, .pay-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                        .info-table td { padding: 5px; font-size: 14px; }
+                        .pay-table th, .pay-table td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 14px; }
+                        .pay-table th { background: #f2f2f2; }
+                        .total-box { float: right; font-size: 16px; font-weight: bold; margin-top: 10px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>BULLETIN DE PAIE</h2>
+                        <p>Période : <strong>${p.mois} ${p.annee}</strong></p>
+                    </div>
+                    <table class="info-table">
+                        <tr><td><strong>Nom & Prénom :</strong> ${p.nom} ${p.prenom}</td><td><strong>Poste :</strong> ${p.poste || '-'}</td></tr>
+                        <tr><td><strong>Date de Paiement :</strong> ${p.date_paiement ? p.date_paiement.split('T')[0] : '-'}</td><td></td></tr>
+                    </table>
+                    <table class="pay-table">
+                        <tr><th>Élément de Paie</th><th>Montant ($)</th></tr>
+                        <tr><td>Primes / Heures Sup</td><td>${(parseFloat(p.primes) + parseFloat(p.heures_sup)).toLocaleString()} $</td></tr>
+                        <tr><td>Retenues Sociales & Fiscales (CNSS + IPR)</td><td>-${parseFloat(p.charges_sociales).toLocaleString()} $</td></tr>
+                    </table>
+                    <div class="total-box">
+                        Salaire Net à Payer : ${parseFloat(p.salaire_net).toLocaleString()} $
+                    </div>
+                    <script>
+                        window.onload = function() { window.print(); }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            fenetreImpression.document.close();
         }
 
         chargerDonnees();
