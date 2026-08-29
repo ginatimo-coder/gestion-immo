@@ -82,6 +82,10 @@ pool.query(`
         prenom VARCHAR(100) NOT NULL,
         email VARCHAR(100),
         telephone VARCHAR(50),
+        adresse TEXT,
+        lieu_naissance VARCHAR(100),
+        date_naissance DATE,
+        enfants_charges INTEGER DEFAULT 0,
         poste VARCHAR(100),
         departement VARCHAR(100),
         date_embauche DATE,
@@ -89,6 +93,12 @@ pool.query(`
         salaire_base NUMERIC(12, 2) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Sécurité additionnelle pour s'assurer que les colonnes existent sur Render --
+    ALTER TABLE employes ADD COLUMN IF NOT EXISTS adresse TEXT;
+    ALTER TABLE employes ADD COLUMN IF NOT EXISTS lieu_naissance VARCHAR(100);
+    ALTER TABLE employes ADD COLUMN IF NOT EXISTS date_naissance DATE;
+    ALTER TABLE employes ADD COLUMN IF NOT EXISTS enfants_charges INTEGER DEFAULT 0;
 
     CREATE TABLE IF NOT EXISTS paie (
         id SERIAL PRIMARY KEY,
@@ -109,24 +119,6 @@ pool.query(`
         date_debut DATE,
         date_fin DATE,
         statut VARCHAR(30) DEFAULT 'En attente'
-    );
-    -- TABLES RESSOURCES HUMAINES (RH) --
-    CREATE TABLE IF NOT EXISTS employes (
-        id SERIAL PRIMARY KEY,
-        nom VARCHAR(100) NOT NULL,
-        prenom VARCHAR(100) NOT NULL,
-        email VARCHAR(100),
-        telephone VARCHAR(50),
-        adresse TEXT,
-        lieu_naissance VARCHAR(100),
-        date_naissance DATE,
-        enfants_charges INTEGER DEFAULT 0,
-        poste VARCHAR(100),
-        departement VARCHAR(100),
-        date_embauche DATE,
-        type_contrat VARCHAR(50),
-        salaire_base NUMERIC(12, 2) DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 `).catch(err => console.error("Erreur tables:", err));
 
@@ -384,14 +376,28 @@ app.get('/api/employes', async (req, res) => {
 
 app.post('/api/employes', async (req, res) => {
     try {
-        const { nom, prenom, email, telephone, poste, departement, date_embauche, type_contrat, salaire_base } = req.body;
+        const { nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance, enfants_charges, poste, departement, date_embauche, type_contrat, salaire_base } = req.body;
         await pool.query(
-            `INSERT INTO employes (nom, prenom, email, telephone, poste, departement, date_embauche, type_contrat, salaire_base) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [nom, prenom, email, telephone, poste, departement, date_embauche || null, type_contrat, salaire_base || 0]
+            `INSERT INTO employes (nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance, enfants_charges, poste, departement, date_embauche, type_contrat, salaire_base) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+            [nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance || null, enfants_charges || 0, poste, departement, date_embauche || null, type_contrat, salaire_base || 0]
         );
         res.redirect('/rh');
     } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.put('/api/employes/:id', async (req, res) => {
+    try {
+        const { nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance, enfants_charges, poste, departement, type_contrat, salaire_base } = req.body;
+        await pool.query(
+            `UPDATE employes SET nom = $1, prenom = $2, email = $3, telephone = $4, adresse = $5, lieu_naissance = $6, date_naissance = $7, enfants_charges = $8, poste = $9, departement = $10, type_contrat = $11, salaire_base = $12 WHERE id = $13`,
+            [nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance || null, enfants_charges || 0, poste, departement, type_contrat, salaire_base, req.params.id]
+        );
+        res.sendStatus(200);
+    } catch (err) {
+        console.error("ERREUR PUT EMPLOYE:", err.message);
         res.status(500).send(err.message);
     }
 });
@@ -419,18 +425,6 @@ app.get('/api/paie', async (req, res) => {
         res.status(500).send(err.message);
     }
 });
-app.put('/api/employes/:id', async (req, res) => {
-    try {
-        const { nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance, enfants_charges, poste, departement, type_contrat, salaire_base } = req.body;
-        await pool.query(
-            `UPDATE employes SET nom = $1, prenom = $2, email = $3, telephone = $4, adresse = $5, lieu_naissance = $6, date_naissance = $7, enfants_charges = $8, poste = $9, departement = $10, type_contrat = $11, salaire_base = $12 WHERE id = $13`,
-            [nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance || null, enfants_charges || 0, poste, departement, type_contrat, salaire_base, req.params.id]
-        );
-        res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
 
 app.post('/api/paie', async (req, res) => {
     try {
@@ -442,7 +436,7 @@ app.post('/api/paie', async (req, res) => {
             [employe_id, mois, annee, primes || 0, heures_sup || 0, charges_sociales || 0, salaire_net]
         );
 
-        // Écriture automatique en comptabilité (Charges de personnel vs Trésorerie)
+        // Écriture automatique en comptabilité générale
         await pool.query(
             `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
              VALUES (CURRENT_DATE, $1, '641 - Rémunérations du personnel', '531 - Caisse', $2, 'Décaissement')`,
