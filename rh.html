@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImmoGérer - Ressources Humaines & Paie</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
+        .nav-menu { background: #2c3e50; padding: 15px; border-radius: 8px; margin-bottom: 25px; display: flex; flex-wrap: wrap; gap: 10px; }
+        .nav-menu a { color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; transition: background 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { background: #34495e; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #219653; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Ressources Humaines & Gestion de la Paie</h1>
+        
+        <!-- Menu de Navigation Global -->
+        <div class="nav-menu">
+            <a href="/">Tableau de bord</a>
+            <a href="/locataires">Locataires</a>
+            <a href="/biens">Biens</a>
+            <a href="/baux">Baux & Contrats</a>
+            <a href="/paiements">Paiements & Caisse</a>
+            <a href="/factures">Factures & Proforma</a>
+            <a href="/comptabilite">Comptabilité</a>
+            <a href="/rh" class="active">Ressources Humaines</a>
+            <a href="/logout" style="background: #c0392b; margin-left: auto;">Déconnexion</a>
+        </div>
+
+        <!-- Section 1 : Enregistrement d'un Employé -->
+        <div class="card">
+            <h3>Ajouter un nouvel employé</h3>
+            <form action="/api/employes" method="POST">
+                <div class="form-grid">
+                    <div>
+                        <label>Nom :</label>
+                        <input type="text" name="nom" required>
+                    </div>
+                    <div>
+                        <label>Prénom :</label>
+                        <input type="text" name="prenom" required>
+                    </div>
+                    <div>
+                        <label>Email :</label>
+                        <input type="email" name="email">
+                    </div>
+                    <div>
+                        <label>Téléphone :</label>
+                        <input type="text" name="telephone">
+                    </div>
+                    <div>
+                        <label>Poste :</label>
+                        <input type="text" name="poste" required>
+                    </div>
+                    <div>
+                        <label>Département :</label>
+                        <input type="text" name="departement">
+                    </div>
+                    <div>
+                        <label>Date d'embauche :</label>
+                        <input type="date" name="date_embauche">
+                    </div>
+                    <div>
+                        <label>Type de Contrat :</label>
+                        <select name="type_contrat">
+                            <option value="CDI">CDI</option>
+                            <option value="CDD">CDD</option>
+                            <option value="Stage">Stage</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Salaire de Base :</label>
+                        <input type="number" step="0.01" name="salaire_base" required>
+                    </div>
+                </div>
+                <button type="submit">Enregistrer l'employé</button>
+            </form>
+        </div>
+
+        <!-- Section 2 : Liste des Employés -->
+        <div class="card">
+            <h3>Annuaire du Personnel</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom & Prénom</th>
+                        <th>Poste</th>
+                        <th>Département</th>
+                        <th>Contrat</th>
+                        <th>Salaire Base</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="liste-employes">
+                    <!-- Chargé dynamiquement via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Section 3 : Établissement de la Paie -->
+        <div class="card">
+            <h3>Générer un Bulletin de Paie</h3>
+            <form action="/api/paie" method="POST">
+                <div class="form-grid">
+                    <div>
+                        <label>Employé :</label>
+                        <select name="employe_id" id="select-employe" required onchange="remplirSalaireBase()">
+                            <!-- Options injectées par JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label>Mois :</label>
+                        <select name="mois">
+                            <option value="Janvier">Janvier</option>
+                            <option value="Février">Février</option>
+                            <option value="Mars">Mars</option>
+                            <option value="Avril">Avril</option>
+                            <option value="Mai">Mai</option>
+                            <option value="Juin">Juin</option>
+                            <option value="Juillet">Juillet</option>
+                            <option value="Août">Août</option>
+                            <option value="Septembre">Septembre</option>
+                            <option value="Octobre">Octobre</option>
+                            <option value="Novembre">Novembre</option>
+                            <option value="Décembre">Décembre</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Année :</label>
+                        <input type="number" name="annee" value="2026" required>
+                    </div>
+                    <div>
+                        <label>Primes (+) :</label>
+                        <input type="number" step="0.01" id="primes" name="primes" value="0" oninput="calculerNet()">
+                    </div>
+                    <div>
+                        <label>Heures Sup (+) :</label>
+                        <input type="number" step="0.01" id="heures_sup" name="heures_sup" value="0" oninput="calculerNet()">
+                    </div>
+                    <div>
+                        <label>Charges Sociales (-) :</label>
+                        <input type="number" step="0.01" id="charges_sociales" name="charges_sociales" value="0" oninput="calculerNet()">
+                    </div>
+                    <div>
+                        <label><strong>Salaire Net à Payer :</strong></label>
+                        <input type="number" step="0.01" id="salaire_net" name="salaire_net" readonly style="background: #e9ecef; font-weight: bold;">
+                    </div>
+                </div>
+                <button type="submit">Valider et comptabiliser la paie</button>
+            </form>
+        </div>
+
+        <!-- Section 4 : Historique de la Paie -->
+        <div class="card">
+            <h3>Historique des Bulletins de Paie</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employé</th>
+                        <th>Période</th>
+                        <th>Primes</th>
+                        <th>Heures Sup</th>
+                        <th>Charges</th>
+                        <th>Net Versé</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="liste-paie">
+                    <!-- Chargé dynamiquement -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        let employesData = [];
+
+        async function chargerDonnees() {
+            // Chargement des employés
+            const resEmp = await fetch('/api/employes');
+            employesData = await resEmp.json();
+            
+            const tbodyEmp = document.getElementById('liste-employes');
+            const selectEmp = document.getElementById('select-employe');
+            
+            tbodyEmp.innerHTML = '';
+            selectEmp.innerHTML = '<option value="">-- Choisir un employé --</option>';
+
+            employesData.forEach(e => {
+                tbodyEmp.innerHTML += `
+                    <tr>
+                        <td><strong>${e.nom} ${e.prenom}</strong></td>
+                        <td>${e.poste}</td>
+                        <td>${e.departement || '-'}</td>
+                        <td>${e.type_contrat}</td>
+                        <td>${parseFloat(e.salaire_base).toLocaleString()} $</td>
+                        <td><button class="btn-danger" onclick="supprimerEmploye(${e.id})">Supprimer</button></td>
+                    </tr>
+                `;
+                selectEmp.innerHTML += `<option value="${e.id}" data-salaire="${e.salaire_base}">${e.nom} ${e.prenom} (${e.poste})</option>`;
+            });
+
+            // Chargement de l'historique de paie
+            const resPaie = await fetch('/api/paie');
+            const paieData = await resPaie.json();
+            const tbodyPaie = document.getElementById('liste-paie');
+            tbodyPaie.innerHTML = '';
+
+            paieData.forEach(p => {
+                tbodyPaie.innerHTML += `
+                    <tr>
+                        <td>${p.nom} ${p.prenom}</td>
+                        <td>${p.mois} ${p.annee}</td>
+                        <td>${parseFloat(p.primes).toLocaleString()} $</td>
+                        <td>${parseFloat(p.heures_sup).toLocaleString()} $</td>
+                        <td>${parseFloat(p.charges_sociales).toLocaleString()} $</td>
+                        <td><strong>${parseFloat(p.salaire_net).toLocaleString()} $</strong></td>
+                        <td>${p.date_paiement ? p.date_paiement.split('T')[0] : '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function remplirSalaireBase() {
+            const select = document.getElementById('select-employe');
+            const selectedOption = select.options[select.selectedIndex];
+            const salaireBase = parseFloat(selectedOption.getAttribute('data-salaire')) || 0;
+            
+            document.getElementById('primes').value = 0;
+            document.getElementById('heures_sup').value = 0;
+            document.getElementById('charges_sociales').value = 0;
+            document.getElementById('salaire_net').value = salaireBase;
+        }
+
+        function calculerNet() {
+            const select = document.getElementById('select-employe');
+            const selectedOption = select.options[select.selectedIndex];
+            const salaireBase = parseFloat(selectedOption.getAttribute('data-salaire')) || 0;
+            
+            const primes = parseFloat(document.getElementById('primes').value) || 0;
+            const heuresSup = parseFloat(document.getElementById('heures_sup').value) || 0;
+            const charges = parseFloat(document.getElementById('charges_sociales').value) || 0;
+
+            const net = (salaireBase + primes + heuresSup) - charges;
+            document.getElementById('salaire_net').value = net > 0 ? net.toFixed(2) : 0;
+        }
+
+        async function supprimerEmploye(id) {
+            if(confirm("Voulez-vous vraiment supprimer cet employé ?")) {
+                await fetch(`/api/employes/${id}`, { method: 'DELETE' });
+                chargerDonnees();
+            }
+        }
+
+        chargerDonnees();
+    </script>
+</body>
+</html>
