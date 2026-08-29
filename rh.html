@@ -5,40 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ImmoGérer - Ressources Humaines & Paie</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
-        .nav-menu { background: #2c3e50; padding: 15px; border-radius: 8px; margin-bottom: 25px; display: flex; flex-wrap: wrap; gap: 10px; }
-        .nav-menu a { color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; transition: background 0.3s; }
-        .nav-menu a:hover, .nav-menu a.active { background: #34495e; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; }
+        aside { width: 260px; background: white; height: 100vh; position: fixed; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; }
+        .logo-area { padding: 20px; font-size: 22px; font-weight: bold; color: #0284c7; display: flex; align-items: center; gap: 10px; }
+        aside ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        aside ul li a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #4b5563; text-decoration: none; font-weight: 500; transition: 0.2s; }
+        aside ul li a:hover, aside ul li a.active { background: #f0f9ff; color: #0284c7; border-left: 4px solid #0284c7; }
+        main { margin-left: 260px; padding: 30px; width: calc(100% - 260px); box-sizing: border-box; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid #e5e7eb; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f4f6f7; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; }
+        th { background-color: #f9fafb; color: #374151; font-size: 14px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #219653; }
-        .btn-danger { background: #e74c3c; }
-        .btn-danger:hover { background: #c0392b; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0369a1; }
+        .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 13px; }
+        .btn-danger:hover { background: #b91c1c; }
+        .info-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #166534; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Ressources Humaines & Gestion de la Paie</h1>
-        
-        <!-- Menu de Navigation Global -->
-        <div class="nav-menu">
-            <a href="/">Tableau de bord</a>
-            <a href="/locataires">Locataires</a>
-            <a href="/biens">Biens</a>
-            <a href="/baux">Baux & Contrats</a>
-            <a href="/paiements">Paiements & Caisse</a>
-            <a href="/factures">Factures & Proforma</a>
-            <a href="/comptabilite">Comptabilité</a>
-            <a href="/rh" class="active">Ressources Humaines</a>
-            <a href="/logout" style="background: #c0392b; margin-left: auto;">Déconnexion</a>
+    <!-- Menu Latéral Identique -->
+    <aside>
+        <div class="logo-area">
+            <i class="fa-solid fa-building-shield"></i> ImmoGérer
         </div>
+        <ul>
+            <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+            <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
+            <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
+            <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+            <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+            <li><a href="/factures"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
+            <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
+            <li><a href="/rh" class="active"><i class="fa-solid fa-user-tie"></i> Ressources Humaines</a></li>
+            <li><a href="/logout" style="color: #dc2626;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+        </ul>
+    </aside>
+
+    <!-- Contenu Principal -->
+    <main>
+        <h2>Ressources Humaines & Gestion de la Paie (RDC)</h2>
 
         <!-- Section 1 : Enregistrement d'un Employé -->
         <div class="card">
@@ -105,7 +117,7 @@
                     </tr>
                 </thead>
                 <tbody id="liste-employes">
-                    <!-- Chargé dynamiquement via JavaScript -->
+                    <!-- Chargé dynamiquement -->
                 </tbody>
             </table>
         </div>
@@ -113,12 +125,15 @@
         <!-- Section 3 : Établissement de la Paie -->
         <div class="card">
             <h3>Générer un Bulletin de Paie</h3>
+            <div class="info-box">
+                <i class="fa-solid fa-circle-info"></i> Paramètres RDC appliqués automatiquement : <strong>CNSS Salarial (3.5%)</strong>, <strong>IPR (30%)</strong> et <strong>ONEM Patronal (0.50%)</strong>.
+            </div>
             <form action="/api/paie" method="POST">
                 <div class="form-grid">
                     <div>
                         <label>Employé :</label>
                         <select name="employe_id" id="select-employe" required onchange="remplirSalaireBase()">
-                            <!-- Options injectées par JS -->
+                            <option value="">-- Choisir un employé --</option>
                         </select>
                     </div>
                     <div>
@@ -151,12 +166,12 @@
                         <input type="number" step="0.01" id="heures_sup" name="heures_sup" value="0" oninput="calculerNet()">
                     </div>
                     <div>
-                        <label>Charges Sociales (-) :</label>
-                        <input type="number" step="0.01" id="charges_sociales" name="charges_sociales" value="0" oninput="calculerNet()">
+                        <label>Total Retenues (CNSS + IPR) (-):</label>
+                        <input type="number" step="0.01" id="charges_sociales" name="charges_sociales" readonly style="background: #f3f4f6;">
                     </div>
                     <div>
                         <label><strong>Salaire Net à Payer :</strong></label>
-                        <input type="number" step="0.01" id="salaire_net" name="salaire_net" readonly style="background: #e9ecef; font-weight: bold;">
+                        <input type="number" step="0.01" id="salaire_net" name="salaire_net" readonly style="background: #e6fffa; font-weight: bold; color: #047857;">
                     </div>
                 </div>
                 <button type="submit">Valider et comptabiliser la paie</button>
@@ -173,7 +188,7 @@
                         <th>Période</th>
                         <th>Primes</th>
                         <th>Heures Sup</th>
-                        <th>Charges</th>
+                        <th>Retenues</th>
                         <th>Net Versé</th>
                         <th>Date</th>
                     </tr>
@@ -183,16 +198,12 @@
                 </tbody>
             </table>
         </div>
-
-    </div>
+    </main>
 
     <script>
-        let employesData = [];
-
         async function chargerDonnees() {
-            // Chargement des employés
             const resEmp = await fetch('/api/employes');
-            employesData = await resEmp.json();
+            const employesData = await resEmp.json();
             
             const tbodyEmp = document.getElementById('liste-employes');
             const selectEmp = document.getElementById('select-employe');
@@ -200,7 +211,7 @@
             tbodyEmp.innerHTML = '';
             selectEmp.innerHTML = '<option value="">-- Choisir un employé --</option>';
 
-            employesData.forEach(e => {
+            (Array.isArray(employesData) ? employesData : []).forEach(e => {
                 tbodyEmp.innerHTML += `
                     <tr>
                         <td><strong>${e.nom} ${e.prenom}</strong></td>
@@ -214,13 +225,12 @@
                 selectEmp.innerHTML += `<option value="${e.id}" data-salaire="${e.salaire_base}">${e.nom} ${e.prenom} (${e.poste})</option>`;
             });
 
-            // Chargement de l'historique de paie
             const resPaie = await fetch('/api/paie');
             const paieData = await resPaie.json();
             const tbodyPaie = document.getElementById('liste-paie');
             tbodyPaie.innerHTML = '';
 
-            paieData.forEach(p => {
+            (Array.isArray(paieData) ? paieData : []).forEach(p => {
                 tbodyPaie.innerHTML += `
                     <tr>
                         <td>${p.nom} ${p.prenom}</td>
@@ -236,27 +246,31 @@
         }
 
         function remplirSalaireBase() {
-            const select = document.getElementById('select-employe');
-            const selectedOption = select.options[select.selectedIndex];
-            const salaireBase = parseFloat(selectedOption.getAttribute('data-salaire')) || 0;
-            
-            document.getElementById('primes').value = 0;
-            document.getElementById('heures_sup').value = 0;
-            document.getElementById('charges_sociales').value = 0;
-            document.getElementById('salaire_net').value = salaireBase;
+            calculerNet();
         }
 
         function calculerNet() {
             const select = document.getElementById('select-employe');
+            if (!select.value) return;
+            
             const selectedOption = select.options[select.selectedIndex];
             const salaireBase = parseFloat(selectedOption.getAttribute('data-salaire')) || 0;
             
             const primes = parseFloat(document.getElementById('primes').value) || 0;
             const heuresSup = parseFloat(document.getElementById('heures_sup').value) || 0;
-            const charges = parseFloat(document.getElementById('charges_sociales').value) || 0;
 
-            const net = (salaireBase + primes + heuresSup) - charges;
-            document.getElementById('salaire_net').value = net > 0 ? net.toFixed(2) : 0;
+            // Calcul du Brut
+            const salaireBrut = salaireBase + primes + heuresSup;
+
+            // Application des taux RDC : CNSS (3.5%) + IPR (30%)
+            const cnssSalarial = salaireBrut * 0.035;
+            const ipr = salaireBrut * 0.30;
+            const totalRetenues = cnssSalarial + ipr;
+
+            const salaireNet = salaireBrut - totalRetenues;
+
+            document.getElementById('charges_sociales').value = totalRetenues.toFixed(2);
+            document.getElementById('salaire_net').value = salaireNet > 0 ? salaireNet.toFixed(2) : 0;
         }
 
         async function supprimerEmploye(id) {
