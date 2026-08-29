@@ -419,6 +419,18 @@ app.get('/api/paie', async (req, res) => {
         res.status(500).send(err.message);
     }
 });
+app.put('/api/employes/:id', async (req, res) => {
+    try {
+        const { nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance, enfants_charges, poste, departement, type_contrat, salaire_base } = req.body;
+        await pool.query(
+            `UPDATE employes SET nom = $1, prenom = $2, email = $3, telephone = $4, adresse = $5, lieu_naissance = $6, date_naissance = $7, enfants_charges = $8, poste = $9, departement = $10, type_contrat = $11, salaire_base = $12 WHERE id = $13`,
+            [nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance || null, enfants_charges || 0, poste, departement, type_contrat, salaire_base, req.params.id]
+        );
+        res.sendStatus(200);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
 
 app.post('/api/paie', async (req, res) => {
     try {
