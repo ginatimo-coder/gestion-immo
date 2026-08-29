@@ -110,6 +110,24 @@ pool.query(`
         date_fin DATE,
         statut VARCHAR(30) DEFAULT 'En attente'
     );
+    -- TABLES RESSOURCES HUMAINES (RH) --
+    CREATE TABLE IF NOT EXISTS employes (
+        id SERIAL PRIMARY KEY,
+        nom VARCHAR(100) NOT NULL,
+        prenom VARCHAR(100) NOT NULL,
+        email VARCHAR(100),
+        telephone VARCHAR(50),
+        adresse TEXT,
+        lieu_naissance VARCHAR(100),
+        date_naissance DATE,
+        enfants_charges INTEGER DEFAULT 0,
+        poste VARCHAR(100),
+        departement VARCHAR(100),
+        date_embauche DATE,
+        type_contrat VARCHAR(50),
+        salaire_base NUMERIC(12, 2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 `).catch(err => console.error("Erreur tables:", err));
 
 // --- ROUTES D'AUTHENTIFICATION ---
