@@ -74,6 +74,42 @@ pool.query(`
         montant NUMERIC,
         type_flux VARCHAR(50)
     );
+
+    -- TABLES RESSOURCES HUMAINES (RH) --
+    CREATE TABLE IF NOT EXISTS employes (
+        id SERIAL PRIMARY KEY,
+        nom VARCHAR(100) NOT NULL,
+        prenom VARCHAR(100) NOT NULL,
+        email VARCHAR(100),
+        telephone VARCHAR(50),
+        poste VARCHAR(100),
+        departement VARCHAR(100),
+        date_embauche DATE,
+        type_contrat VARCHAR(50),
+        salaire_base NUMERIC(12, 2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS paie (
+        id SERIAL PRIMARY KEY,
+        employe_id INTEGER REFERENCES employes(id) ON DELETE CASCADE,
+        mois VARCHAR(20),
+        annee INTEGER,
+        primes NUMERIC(12, 2) DEFAULT 0,
+        heures_sup NUMERIC(12, 2) DEFAULT 0,
+        charges_sociales NUMERIC(12, 2) DEFAULT 0,
+        salaire_net NUMERIC(12, 2) DEFAULT 0,
+        date_paiement DATE DEFAULT CURRENT_DATE
+    );
+
+    CREATE TABLE IF NOT EXISTS conges (
+        id SERIAL PRIMARY KEY,
+        employe_id INTEGER REFERENCES employes(id) ON DELETE CASCADE,
+        type_conge VARCHAR(50),
+        date_debut DATE,
+        date_fin DATE,
+        statut VARCHAR(30) DEFAULT 'En attente'
+    );
 `).catch(err => console.error("Erreur tables:", err));
 
 // --- ROUTES D'AUTHENTIFICATION ---
@@ -104,6 +140,7 @@ app.get('/baux', (req, res) => res.sendFile(path.join(__dirname, 'baux.html')));
 app.get('/paiements', (req, res) => res.sendFile(path.join(__dirname, 'paiements.html')));
 app.get('/factures', (req, res) => res.sendFile(path.join(__dirname, 'factures.html')));
 app.get('/comptabilite', (req, res) => res.sendFile(path.join(__dirname, 'comptabilite.html')));
+app.get('/rh', (req, res) => res.sendFile(path.join(__dirname, 'rh.html')));
 
 // --- API LOCATAIRES ---
 app.get('/api/locataires', async (req, res) => {
@@ -312,6 +349,77 @@ app.delete('/api/factures/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM factures WHERE id = $1', [req.params.id]);
         res.sendStatus(200);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// --- API RESSOURCES HUMAINES (RH) ---
+app.get('/api/employes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM employes ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.post('/api/employes', async (req, res) => {
+    try {
+        const { nom, prenom, email, telephone, poste, departement, date_embauche, type_contrat, salaire_base } = req.body;
+        await pool.query(
+            `INSERT INTO employes (nom, prenom, email, telephone, poste, departement, date_embauche, type_contrat, salaire_base) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [nom, prenom, email, telephone, poste, departement, date_embauche || null, type_contrat, salaire_base || 0]
+        );
+        res.redirect('/rh');
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.delete('/api/employes/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM employes WHERE id = $1', [req.params.id]);
+        res.sendStatus(200);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.get('/api/paie', async (req, res) => {
+    try {
+        const query = `
+            SELECT paie.*, employes.nom, employes.prenom, employes.poste 
+            FROM paie 
+            JOIN employes ON paie.employe_id = employes.id 
+            ORDER BY paie.id DESC;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.post('/api/paie', async (req, res) => {
+    try {
+        const { employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net } = req.body;
+        
+        await pool.query(
+            `INSERT INTO paie (employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [employe_id, mois, annee, primes || 0, heures_sup || 0, charges_sociales || 0, salaire_net]
+        );
+
+        // Écriture automatique en comptabilité (Charges de personnel vs Trésorerie)
+        await pool.query(
+            `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
+             VALUES (CURRENT_DATE, $1, '641 - Rémunérations du personnel', '531 - Caisse', $2, 'Décaissement')`,
+            [`Paie - Employé ID ${employe_id} (${mois} ${annee})`, salaire_net]
+        );
+
+        res.redirect('/rh');
     } catch (err) {
         res.status(500).send(err.message);
     }
