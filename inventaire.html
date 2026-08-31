@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImmoGérer - Inventaire & Stock</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; }
+        aside { width: 260px; background: white; height: 100vh; position: fixed; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; }
+        .logo-area { padding: 20px; font-size: 22px; font-weight: bold; color: #0284c7; display: flex; align-items: center; gap: 10px; }
+        aside ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        aside ul li a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #4b5563; text-decoration: none; font-weight: 500; transition: 0.2s; }
+        aside ul li a:hover, aside ul li a.active { background: #f0f9ff; color: #0284c7; border-left: 4px solid #0284c7; }
+        main { margin-left: 260px; padding: 30px; width: calc(100% - 260px); box-sizing: border-box; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid #e5e7eb; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+        th { background-color: #f9fafb; color: #374151; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0369a1; }
+        .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div class="logo-area">
+            <i class="fa-solid fa-building-shield"></i> ImmoGérer
+        </div>
+        <ul>
+            <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+            <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
+            <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
+            <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+            <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+            <li><a href="/inventaire" class="active"><i class="fa-solid fa-boxes-stacked"></i> Inventaire & Stock</a></li>
+            <li><a href="/factures"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
+            <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
+            <li><a href="/rh"><i class="fa-solid fa-user-tie"></i> Ressources Humaines</a></li>
+            <li><a href="/logout" style="color: #dc2626;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+        </ul>
+    </aside>
+
+    <main>
+        <h2>Gestion de l'Inventaire & du Stock</h2>
+
+        <div class="card">
+            <h3>Ajouter un nouvel article au stock</h3>
+            <form action="/api/inventaire" method="POST">
+                <div class="form-grid">
+                    <div>
+                        <label>Désignation :</label>
+                        <input type="text" name="designation" required>
+                    </div>
+                    <div>
+                        <label>Référence / Code :</label>
+                        <input type="text" name="reference">
+                    </div>
+                    <div>
+                        <label>Quantité en stock :</label>
+                        <input type="number" name="quantite_stock" value="0" min="0" required>
+                    </div>
+                    <div>
+                        <label>Prix unitaire ($) :</label>
+                        <input type="number" step="0.01" name="prix_unitaire" value="0" required>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label>Description / Remarques :</label>
+                    <textarea name="description" rows="2"></textarea>
+                </div>
+                <button type="submit">Enregistrer l'article</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>État du Stock Actuel</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Référence</th>
+                        <th>Désignation</th>
+                        <th>Quantité</th>
+                        <th>Prix Unitaire</th>
+                        <th>Valeur Totale</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="liste-inventaire"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        async function chargerInventaire() {
+            const res = await fetch('/api/inventaire');
+            const data = await res.json();
+            const tbody = document.getElementById('liste-inventaire');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                const valeurTotale = parseFloat(item.quantite_stock) * parseFloat(item.prix_unitaire);
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${item.reference || '-'}</strong></td>
+                        <td>${item.designation}</td>
+                        <td>${item.quantite_stock}</td>
+                        <td>${parseFloat(item.prix_unitaire).toLocaleString()} $</td>
+                        <td><strong>${valeurTotale.toLocaleString()} $</strong></td>
+                        <td><button class="btn-danger" onclick="supprimerArticle(${item.id})">Supprimer</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function supprimerArticle(id) {
+            if(confirm("Voulez-vous vraiment supprimer cet article de l'inventaire ?")) {
+                await fetch(`/api/inventaire/${id}`, { method: 'DELETE' });
+                chargerInventaire();
+            }
+        }
+
+        chargerInventaire();
+    </script>
+</body>
+</html>
