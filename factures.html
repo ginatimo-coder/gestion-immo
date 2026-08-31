@@ -29,6 +29,7 @@
         .btn-warning:hover { background: #b45309; }
         .btn-print { background: #4f46e5; padding: 6px 12px; font-size: 13px; color: white; }
         .btn-print:hover { background: #4338ca; }
+        .lignes-container { background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -55,7 +56,7 @@
     <main>
         <h2>Gestion des Factures, Proformas & Bons de Livraison (BL)</h2>
 
-        <!-- Section 1 : Formulaire d'Ajout / Modification -->
+        <!-- Section 1 : Formulaire de Création -->
         <div class="card">
             <h3 id="form-title">Créer un nouveau document</h3>
             <form id="document-form" onsubmit="enregistrerDocument(event)">
@@ -63,7 +64,7 @@
                 <div class="form-grid">
                     <div>
                         <label>Type de Document :</label>
-                        <select id="type" required>
+                        <select id="type" required onchange="genererNumeroRef()">
                             <option value="Facture">Facture</option>
                             <option value="Proforma">Proforma</option>
                             <option value="Bon de Livraison">Bon de Livraison (BL)</option>
@@ -71,7 +72,7 @@
                     </div>
                     <div>
                         <label>Numéro de Référence :</label>
-                        <input type="text" id="numero_ref" placeholder="ex: FAC-2026-001" required>
+                        <input type="text" id="numero_ref" required readonly style="background: #e5e7eb;">
                     </div>
                     <div>
                         <label>Locataire / Client :</label>
@@ -84,10 +85,6 @@
                         <select id="bien_id">
                             <option value="">-- Aucun / Divers --</option>
                         </select>
-                    </div>
-                    <div>
-                        <label>Montant ($) :</label>
-                        <input type="number" step="0.01" id="montant" required>
                     </div>
                     <div>
                         <label>Date d'émission :</label>
@@ -106,6 +103,14 @@
                         </select>
                     </div>
                 </div>
+
+                <!-- Section des Lignes (Articles / Prestations / Eau / Électricité) -->
+                <div class="lignes-container">
+                    <h4>Lignes du document (Articles, Eau, Électricité, Loyer...)</h4>
+                    <div id="lignes-inputs"></div>
+                    <button type="button" onclick="ajouterLigneInput()" style="background: #059669; margin-top: 10px; padding: 6px 12px; font-size: 13px;">+ Ajouter une ligne</button>
+                </div>
+
                 <button type="submit" id="btn-submit-doc">Enregistrer le document</button>
                 <button type="button" id="btn-cancel-edit" style="background: #6b7280; display: none; margin-left: 10px;" onclick="resetFormulaire()">Annuler</button>
             </form>
@@ -119,9 +124,9 @@
                     <tr>
                         <th>Réf / Type</th>
                         <th>Client / Bien</th>
-                        <th>Montant</th>
-                        <th>Dates (Émission / Validité)</th>
-                        <th>Statut</th>
+                        <th>Détails des Lignes</th>
+                        <th>Montant Total</th>
+                        <th>Dates</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -134,7 +139,6 @@
         let documentsGlobal = [];
 
         async function chargerDonnees() {
-            // Charger locataires et biens pour les listes déroulantes
             const resLoc = await fetch('/api/locataires');
             const locataires = await resLoc.json();
             const selectLoc = document.getElementById('locataire_id');
@@ -151,42 +155,90 @@
                 selectBien.innerHTML += `<option value="${b.id}">${b.nom_bien}</option>`;
             });
 
-            // Charger les documents (Factures, Proformas, BL)
             const resFac = await fetch('/api/factures');
             documentsGlobal = await resFac.json();
             const tbody = document.getElementById('liste-factures');
             tbody.innerHTML = '';
 
             documentsGlobal.forEach(d => {
+                let lignesHtml = '<ul>';
+                if (d.lignes && d.lignes.length > 0) {
+                    d.lignes.forEach(l => {
+                        lignesHtml += `<li>${l.designation} : <strong>${parseFloat(l.montant).toLocaleString()} $</strong></li>`;
+                    });
+                } else {
+                    lignesHtml += `<li>Prestation unique : ${parseFloat(d.montant).toLocaleString()} $</li>`;
+                }
+                lignesHtml += '</ul>';
+
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>${d.numero_ref || 'N/A'}</strong><br><span style="color: #0284c7; font-weight: 600;">${d.type}</span></td>
                         <td>${d.locataire_nom ? d.locataire_nom + ' ' + d.locataire_prenom : 'Client divers'}<br><small>${d.nom_bien || ''}</small></td>
+                        <td>${lignesHtml}</td>
                         <td><strong>${parseFloat(d.montant).toLocaleString()} $</strong></td>
-                        <td>Émis le: ${d.date_emission ? d.date_emission.split('T')[0] : '-'}<br><small>Valide jusqu'au: ${d.date_validite ? d.date_validite.split('T')[0] : '-'}</small></td>
-                        <td>${d.statut}</td>
+                        <td>Émis: ${d.date_emission ? d.date_emission.split('T')[0] : '-'}<br><small>Valide: ${d.date_validite ? d.date_validite.split('T')[0] : 'N/A'}</small></td>
                         <td>
-                            <button class="btn-warning" onclick="preparerModification(${d.id})">Modifier</button>
                             <button class="btn-print" onclick='imprimerDocument(${JSON.stringify(d)})'>Imprimer</button>
                             <button class="btn-danger" onclick="supprimerDocument(${d.id})">Supprimer</button>
                         </td>
                     </tr>
                 `;
             });
+
+            if(!document.getElementById('document_id_edit').value) {
+                genererNumeroRef();
+            }
+        }
+
+        async function genererNumeroRef() {
+            const type = document.getElementById('type').value;
+            const res = await fetch(`/api/factures/prochain-numero/${type}`);
+            const data = await res.json();
+            document.getElementById('numero_ref').value = data.numero_ref;
+        }
+
+        function ajouterLigneInput(designation = '', montant = '') {
+            const container = document.getElementById('lignes-inputs');
+            const div = document.createElement('div');
+            div.className = 'form-grid ligne-item';
+            div.style.marginBottom = '10px';
+            div.innerHTML = `
+                <div><input type="text" class="ligne-desc" placeholder="Désignation (ex: Consommation eau, Électricité, Loyer...)" value="${designation}" required></div>
+                <div><input type="number" step="0.01" class="ligne-montant" placeholder="Montant ($)" value="${montant}" required></div>
+                <div><button type="button" class="btn-danger" onclick="this.parentElement.parentElement.remove()" style="padding: 10px;">X</button></div>
+            `;
+            container.appendChild(div);
         }
 
         async function enregistrerDocument(event) {
             event.preventDefault();
             const id = document.getElementById('document_id_edit').value;
+            
+            // Récupérer les lignes dynamiques
+            const lignes = [];
+            document.querySelectorAll('.ligne-item').forEach(item => {
+                const designation = item.querySelector('.ligne-desc').value;
+                const montant = item.querySelector('.ligne-montant').value;
+                if(designation && montant) {
+                    lignes.push({ designation, montant });
+                }
+            });
+
+            if (lignes.length === 0) {
+                alert("Veuillez ajouter au moins une ligne de prestation.");
+                return;
+            }
+
             const data = {
                 type: document.getElementById('type').value,
                 numero_ref: document.getElementById('numero_ref').value,
                 locataire_id: document.getElementById('locataire_id').value || null,
                 bien_id: document.getElementById('bien_id').value || null,
-                montant: document.getElementById('montant').value,
                 date_emission: document.getElementById('date_emission').value,
                 date_validite: document.getElementById('date_validite').value,
-                statut: document.getElementById('statut').value
+                statut: document.getElementById('statut').value,
+                lignes: lignes
             };
 
             const url = id ? `/api/factures/${id}` : '/api/factures';
@@ -202,32 +254,12 @@
             chargerDonnees();
         }
 
-        function preparerModification(id) {
-            const d = documentsGlobal.find(x => x.id === id);
-            if (!d) return;
-
-            document.getElementById('document_id_edit').value = d.id;
-            document.getElementById('type').value = d.type;
-            document.getElementById('numero_ref').value = d.numero_ref || '';
-            document.getElementById('locataire_id').value = d.locataire_id || '';
-            document.getElementById('bien_id').value = d.bien_id || '';
-            document.getElementById('montant').value = d.montant;
-            document.getElementById('date_emission').value = d.date_emission ? d.date_emission.split('T')[0] : '';
-            document.getElementById('date_validite').value = d.date_validite ? d.date_validite.split('T')[0] : '';
-            document.getElementById('statut').value = d.statut;
-
-            document.getElementById('form-title').innerText = "Modifier le document : " + d.numero_ref;
-            document.getElementById('btn-submit-doc').innerText = "Mettre à jour";
-            document.getElementById('btn-cancel-edit').style.display = 'inline-block';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
         function resetFormulaire() {
             document.getElementById('document-form').reset();
             document.getElementById('document_id_edit').value = '';
-            document.getElementById('form-title').innerText = "Créer un nouveau document";
-            document.getElementById('btn-submit-doc').innerText = "Enregistrer le document";
-            document.getElementById('btn-cancel-edit').style.display = 'none';
+            document.getElementById('lignes-inputs').innerHTML = '';
+            ajouterLigneInput();
+            genererNumeroRef();
         }
 
         async function supprimerDocument(id) {
@@ -238,6 +270,15 @@
         }
 
         function imprimerDocument(d) {
+            let lignesTableHtml = '';
+            if (d.lignes && d.lignes.length > 0) {
+                d.lignes.forEach(l => {
+                    lignesTableHtml += `<tr><td>${l.designation}</td><td>${parseFloat(l.montant).toLocaleString()} $</td></tr>`;
+                });
+            } else {
+                lignesTableHtml += `<tr><td>Prestation diverse (Réf: ${d.numero_ref})</td><td>${parseFloat(d.montant).toLocaleString()} $</td></tr>`;
+            }
+
             const fenetreImpression = window.open('', '_blank');
             fenetreImpression.document.write(`
                 <html>
@@ -274,11 +315,11 @@
                         <tr><td><strong>Référence Bien :</strong> ${d.nom_bien || 'N/A'}</td></tr>
                     </table>
                     <table class="content-table">
-                        <tr><th>Description des prestations / services</th><th>Montant ($)</th></tr>
-                        <tr><td>Prestation immobilière / Location (Réf: ${d.numero_ref})</td><td>${parseFloat(d.montant).toLocaleString()} $</td></tr>
+                        <tr><th>Désignation des prestations / articles</th><th>Montant ($)</th></tr>
+                        ${lignesTableHtml}
                     </table>
                     <div class="total-section">
-                        Total à Payer : ${parseFloat(d.montant).toLocaleString()} $
+                        Total Général : ${parseFloat(d.montant).toLocaleString()} $
                     </div>
                     <div class="footer">
                         <p>ImmoGérer RDC - Siège Social : Kinshasa, RDC | RCCM : / | ID.NAT : /</p>
@@ -293,6 +334,8 @@
             fenetreImpression.document.close();
         }
 
+        // Initialisation de la première ligne au chargement
+        resetFormulaire();
         chargerDonnees();
     </script>
 </body>
