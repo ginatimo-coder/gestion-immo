@@ -103,7 +103,7 @@ pool.query(`
         type_flux VARCHAR(50)
     );
 
-    -- TABLES RESSOURCES HUMAINES (RH) --
+    -- TABLES RESSOURCES HUMAINES (RH) & PRESENCES --
     CREATE TABLE IF NOT EXISTS employes (
         id SERIAL PRIMARY KEY,
         nom VARCHAR(100) NOT NULL,
@@ -137,6 +137,15 @@ pool.query(`
         charges_sociales NUMERIC(12, 2) DEFAULT 0,
         salaire_net NUMERIC(12, 2) DEFAULT 0,
         date_paiement DATE DEFAULT CURRENT_DATE
+    );
+
+    CREATE TABLE IF NOT EXISTS presences (
+        id SERIAL PRIMARY KEY,
+        employe_id INT REFERENCES employes(id) ON DELETE CASCADE,
+        date_pointage DATE NOT NULL,
+        heure_arrivee TIME,
+        heure_depart TIME,
+        statut VARCHAR(30) DEFAULT 'Présent'
     );
 `).catch(err => console.error("Erreur tables:", err));
 
@@ -458,7 +467,6 @@ app.put('/api/factures/:id', async (req, res) => {
             [numero_ref, type, locataire_id || null, bien_id || null, montantTotal, date_emission || null, date_validite || null, statut, factureId]
         );
 
-        // Supprimer les anciennes lignes et réinsérer les nouvelles
         await client.query('DELETE FROM facture_lignes WHERE facture_id = $1', [factureId]);
 
         if (lignes && Array.isArray(lignes)) {
@@ -491,7 +499,7 @@ app.delete('/api/factures/:id', async (req, res) => {
     }
 });
 
-// --- API RESSOURCES HUMAINES (RH) ---
+// --- API RESSOURCES HUMAINES (RH) & PRESENCES ---
 app.get('/api/employes', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM employes ORDER BY id DESC');
@@ -566,6 +574,50 @@ app.post('/api/paie', async (req, res) => {
             [`Paie - Employé ID ${employe_id} (${mois} ${annee})`, salaire_net]
         );
         res.redirect('/rh');
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.get('/api/presences', async (req, res) => {
+    try {
+        const query = `
+            SELECT presences.*, employes.nom, employes.prenom, employes.poste 
+            FROM presences 
+            JOIN employes ON presences.employe_id = employes.id 
+            ORDER BY presences.date_pointage DESC, presences.id DESC;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.post('/api/presences/sync', async (req, res) => {
+    try {
+        const pointages = req.body;
+        if (!Array.isArray(pointages)) return res.status(400).send("Format invalide.");
+
+        for (let p of pointages) {
+            const check = await pool.query(
+                'SELECT id FROM presences WHERE employe_id = $1 AND date_pointage = $2',
+                [p.employe_id, p.date_pointage]
+            );
+
+            if (check.rows.length > 0) {
+                await pool.query(
+                    'UPDATE presences SET heure_depart = $1 WHERE employe_id = $2 AND date_pointage = $3',
+                    [p.heure_depart || null, p.employe_id, p.date_pointage]
+                );
+            } else {
+                await pool.query(
+                    'INSERT INTO presences (employe_id, date_pointage, heure_arrivee, heure_depart, statut) VALUES ($1, $2, $3, $4, $5)',
+                    [p.employe_id, p.date_pointage, p.heure_arrivee || null, p.heure_depart || null, p.statut || 'Présent']
+                );
+            }
+        }
+        res.status(200).send({ message: "Synchronisation réussie !" });
     } catch (err) {
         res.status(500).send(err.message);
     }
