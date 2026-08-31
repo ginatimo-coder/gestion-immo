@@ -7,18 +7,22 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; text-transform: uppercase; }
+        /* Rétablir les textes normaux pour les inputs et sélecteurs pour ne pas bloquer la saisie */
+        input, select, textarea { text-transform: none; }
+        
         aside { width: 260px; background: white; height: 100vh; position: fixed; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; }
         .logo-area { padding: 20px; font-size: 22px; font-weight: bold; color: #0284c7; display: flex; align-items: center; gap: 10px; }
         aside ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
         aside ul li a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #4b5563; text-decoration: none; font-weight: 500; transition: 0.2s; }
         aside ul li a:hover, aside ul li a.active { background: #f0f9ff; color: #0284c7; border-left: 4px solid #0284c7; }
-        main { margin-left: 260px; padding: 30px; width: calc(100% - 260px); box-sizing: border-box; }
+        main { margin-left: 260px; padding: 30px; width: calc(100% - 260px); box-sizing: border-box; text-transform: none; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid #e5e7eb; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
         th { background-color: #f9fafb; color: #374151; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .ligne-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 10px; align-items: center; margin-bottom: 10px; }
         label { display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px; }
         input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
         button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
@@ -32,7 +36,7 @@
         
         /* Modal d'Aperçu */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 700px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 750px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .close-modal { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #6b7280; }
     </style>
 </head>
@@ -109,7 +113,15 @@
                 </div>
 
                 <div class="lignes-container">
-                    <h4>Lignes du document (Articles, Eau, Électricité, Loyer...)</h4>
+                    <h4>Lignes du document (Qté, Prix, TVA 16% / 0%)</h4>
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 10px; font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #4b5563;">
+                        <div>Désignation</div>
+                        <div>Qté</div>
+                        <div>Prix Unit. ($)</div>
+                        <div>TVA</div>
+                        <div>Total Ligne ($)</div>
+                        <div></div>
+                    </div>
                     <div id="lignes-inputs"></div>
                     <button type="button" onclick="ajouterLigneInput()" style="background: #059669; margin-top: 10px; padding: 6px 12px; font-size: 13px;">+ Ajouter une ligne</button>
                 </div>
@@ -159,7 +171,7 @@
             const selectLoc = document.getElementById('locataire_id');
             selectLoc.innerHTML = '<option value="">-- Aucun / Divers --</option>';
             locatairesGlobal.forEach(l => {
-                selectLoc.innerHTML += `<option value="${l.id}">${l.nom} ${l.prenom} (${l.telephone || 'Sans tél'})</option>`;
+                selectLoc.innerHTML += `<option value="${l.id}">${l.nom.toUpperCase()} ${l.prenom} (${l.telephone || 'Sans tél'})</option>`;
             });
 
             const resBiens = await fetch('/api/biens');
@@ -167,7 +179,7 @@
             const selectBien = document.getElementById('bien_id');
             selectBien.innerHTML = '<option value="">-- Aucun / Divers --</option>';
             biens.forEach(b => {
-                selectBien.innerHTML += `<option value="${b.id}">${b.nom_bien}</option>`;
+                selectBien.innerHTML += `<option value="${b.id}">${b.nom_bien.toUpperCase()}</option>`;
             });
 
             const resFac = await fetch('/api/factures');
@@ -180,15 +192,14 @@
                 const telClient = clientObj && clientObj.telephone ? clientObj.telephone : '';
                 const emailClient = clientObj && clientObj.email ? clientObj.email : '';
                 
-                // Liens WhatsApp et Email
                 const msgWhatsapp = encodeURIComponent(`Bonjour, voici votre ${d.type} (Réf: ${d.numero_ref}) d'un montant de ${parseFloat(d.montant).toLocaleString()} $. Merci de votre confiance.`);
                 const linkWhatsapp = telClient ? `https://wa.me/${telClient.replace(/[^0-9]/g, '')}?text=${msgWhatsapp}` : `https://wa.me/?text=${msgWhatsapp}`;
                 const linkEmail = `mailto:${emailClient}?subject=${d.type} ${d.numero_ref}&body=Bonjour,%0A%0AVoici votre document ${d.type} référencé ${d.numero_ref} pour un montant total de ${parseFloat(d.montant).toLocaleString()} $.`;
 
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong>${d.numero_ref || 'N/A'}</strong><br><span style="color: #0284c7; font-weight: 600;">${d.type}</span></td>
-                        <td>${d.locataire_nom ? d.locataire_nom + ' ' + d.locataire_prenom : 'Client divers'}<br><small>${d.nom_bien || ''}</small></td>
+                        <td><strong>${d.numero_ref || 'N/A'}</strong><br><span style="color: #0284c7; font-weight: 600;">${d.type.toUpperCase()}</span></td>
+                        <td>${d.locataire_nom ? d.locataire_nom.toUpperCase() + ' ' + d.locataire_prenom : 'CLIENT DIVERS'}<br><small>${d.nom_bien ? d.nom_bien.toUpperCase() : ''}</small></td>
                         <td><strong>${parseFloat(d.montant).toLocaleString()} $</strong></td>
                         <td>Émis: ${d.date_emission ? d.date_emission.split('T')[0] : '-'}<br><small>Valide: ${d.date_validite ? d.date_validite.split('T')[0] : 'N/A'}</small></td>
                         <td>
@@ -220,17 +231,36 @@
             document.getElementById('numero_ref').value = data.numero_ref;
         }
 
-        function ajouterLigneInput(designation = '', montant = '') {
+        function ajouterLigneInput(designation = '', qte = 1, prix = 0, tva = 16) {
             const container = document.getElementById('lignes-inputs');
             const div = document.createElement('div');
-            div.className = 'form-grid ligne-item';
-            div.style.marginBottom = '10px';
+            div.className = 'ligne-grid ligne-item';
             div.innerHTML = `
-                <div><input type="text" class="ligne-desc" placeholder="Désignation (Eau, Électricité, Loyer...)" value="${designation}" required></div>
-                <div><input type="number" step="0.01" class="ligne-montant" placeholder="Montant ($)" value="${montant}" required></div>
+                <div><input type="text" class="ligne-desc" placeholder="Désignation (Eau, Électricité...)" value="${designation}" style="text-transform: uppercase;" required oninput="this.value = this.value.toUpperCase()"></div>
+                <div><input type="number" step="1" min="1" class="ligne-qte" value="${qte}" oninput="calculerTotalLigne(this)" required></div>
+                <div><input type="number" step="0.01" min="0" class="ligne-prix" value="${prix}" oninput="calculerTotalLigne(this)" required></div>
+                <div>
+                    <select class="ligne-tva" onchange="calculerTotalLigne(this)">
+                        <option value="16" ${tva == 16 ? 'selected' : ''}>16%</option>
+                        <option value="0" ${tva == 0 ? 'selected' : ''}>0%</option>
+                    </select>
+                </div>
+                <div><input type="text" class="ligne-total" readonly style="background: #e5e7eb; font-weight: bold;" value="0.00"></div>
                 <div><button type="button" class="btn-danger" onclick="this.parentElement.parentElement.remove()" style="padding: 10px;">X</button></div>
             `;
             container.appendChild(div);
+            calculerTotalLigne(div.querySelector('.ligne-qte'));
+        }
+
+        function calculerTotalLigne(element) {
+            const row = element.closest('.ligne-item');
+            const qte = parseFloat(row.querySelector('.ligne-qte').value) || 0;
+            const prix = parseFloat(row.querySelector('.ligne-prix').value) || 0;
+            const tva = parseFloat(row.querySelector('.ligne-tva').value) || 0;
+
+            const sousTotal = qte * prix;
+            const totalTTC = sousTotal * (1 + (tva / 100));
+            row.querySelector('.ligne-total').value = totalTTC.toFixed(2);
         }
 
         async function enregistrerDocument(event) {
@@ -239,10 +269,14 @@
             
             const lignes = [];
             document.querySelectorAll('.ligne-item').forEach(item => {
-                const designation = item.querySelector('.ligne-desc').value;
-                const montant = item.querySelector('.ligne-montant').value;
-                if(designation && montant) {
-                    lignes.push({ designation, montant });
+                const designation = item.querySelector('.ligne-desc').value.toUpperCase();
+                const qte = item.querySelector('.ligne-qte').value;
+                const prix = item.querySelector('.ligne-prix').value;
+                const tva = item.querySelector('.ligne-tva').value;
+                const montantTotalLigne = item.querySelector('.ligne-total').value;
+
+                if(designation && prix) {
+                    lignes.push({ designation, qte, prix, tva, montant: montantTotalLigne });
                 }
             });
 
@@ -290,9 +324,9 @@
 
             document.getElementById('lignes-inputs').innerHTML = '';
             if (d.lignes && d.lignes.length > 0) {
-                d.lignes.forEach(l => ajouterLigneInput(l.designation, l.montant));
+                d.lignes.forEach(l => ajouterLigneInput(l.designation, l.qte || 1, l.montant / (l.qte || 1), l.tva || 16));
             } else {
-                ajouterLigneInput('Prestation', d.montant);
+                ajouterLigneInput('PRESTATION', 1, d.montant, 16);
             }
 
             document.getElementById('form-title').innerText = "Modifier le document : " + d.numero_ref;
@@ -324,35 +358,51 @@
             let lignesHtml = '';
             if (d.lignes && d.lignes.length > 0) {
                 d.lignes.forEach(l => {
-                    lignesHtml += `<tr><td style="border: 1px solid #cbd5e1; padding: 8px;">${l.designation}</td><td style="border: 1px solid #cbd5e1; padding: 8px;">${parseFloat(l.montant).toLocaleString()} $</td></tr>`;
+                    lignesHtml += `
+                        <tr>
+                            <td style="border: 1px solid #cbd5e1; padding: 8px;">${l.designation}</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${l.qte || 1}</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">${(l.montant / (l.qte || 1)).toLocaleString()} $</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${l.tva || 16}%</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">${parseFloat(l.montant).toLocaleString()} $</td>
+                        </tr>`;
                 });
             }
 
+            const clientObj = locatairesGlobal.find(l => l.id === d.locataire_id);
+            const nomClient = clientObj ? `${clientObj.nom.toUpperCase()} ${clientObj.prenom}` : 'CLIENT DIVERS';
+
             const htmlContent = `
-                <div style="font-family: Arial, sans-serif; color: #333;">
+                <div style="font-family: Arial, sans-serif; color: #333; text-transform: uppercase;">
                     <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 10px; margin-bottom: 20px;">
                         <div>
-                            <h3 style="margin: 0; color: #0284c7;">ImmoGérer RDC</h3>
-                            <p style="margin: 2px 0; font-size: 13px;">Gestion Immobilière & Prestations</p>
+                            <h3 style="margin: 0; color: #0284c7;">IMMO-GÉRER RDC</h3>
+                            <p style="margin: 2px 0; font-size: 13px;">GESTION IMMOBILIÈRE & PRESTATIONS</p>
                         </div>
                         <div style="text-align: right;">
-                            <h2 style="margin: 0; color: #0284c7; text-transform: uppercase;">${d.type}</h2>
+                            <h2 style="margin: 0; color: #0284c7;">${d.type}</h2>
                             <p style="margin: 2px 0; font-size: 13px;"><strong>N° Réf :</strong> ${d.numero_ref}</p>
                             <p style="margin: 2px 0; font-size: 13px;"><strong>Date :</strong> ${d.date_emission ? d.date_emission.split('T')[0] : '-'}</p>
                         </div>
                     </div>
-                    <p><strong>Client :</strong> ${d.locataire_nom ? d.locataire_nom + ' ' + d.locataire_prenom : 'Client divers'}</p>
+                    <p><strong>Client :</strong> ${nomClient}</p>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
                         <thead>
-                            <tr style="background: #f1f5f9;"><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">Désignation</th><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">Montant ($)</th></tr>
+                            <tr style="background: #f1f5f9;">
+                                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">Désignation</th>
+                                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">Qté</th>
+                                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Prix Unit.</th>
+                                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">TVA</th>
+                                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Total ($)</th>
+                            </tr>
                         </thead>
                         <tbody>
                             ${lignesHtml}
                         </tbody>
                     </table>
-                    <h3 style="text-align: right; margin-top: 20px;">Total : ${parseFloat(d.montant).toLocaleString()} $</h3>
+                    <h3 style="text-align: right; margin-top: 20px;">TOTAL GÉNÉRAL : ${parseFloat(d.montant).toLocaleString()} $</h3>
                     <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #cbd5e1; padding-top: 10px;">
-                        ImmoGérer RDC - Kinshasa | Merci de votre confiance.
+                        IMMO-GÉRER RDC - KINSHASA | MERCI DE VOTRE CONFIANCE.
                     </div>
                 </div>
             `;
@@ -369,9 +419,12 @@
             let lignesTableHtml = '';
             if (docActuelApercu.lignes && docActuelApercu.lignes.length > 0) {
                 docActuelApercu.lignes.forEach(l => {
-                    lignesTableHtml += `<tr><td>${l.designation}</td><td>${parseFloat(l.montant).toLocaleString()} $</td></tr>`;
+                    lignesTableHtml += `<tr><td>${l.designation}</td><td style="text-align:center;">${l.qte || 1}</td><td style="text-align:right;">${(l.montant / (l.qte || 1)).toLocaleString()} $</td><td style="text-align:center;">${l.tva || 16}%</td><td style="text-align:right;">${parseFloat(l.montant).toLocaleString()} $</td></tr>`;
                 });
             }
+
+            const clientObj = locatairesGlobal.find(l => l.id === docActuelApercu.locataire_id);
+            const nomClient = clientObj ? `${clientObj.nom.toUpperCase()} ${clientObj.prenom}` : 'CLIENT DIVERS';
 
             const fenetreImpression = window.open('', '_blank');
             fenetreImpression.document.write(`
@@ -379,9 +432,9 @@
                 <head>
                     <title>${docActuelApercu.type} - ${docActuelApercu.numero_ref}</title>
                     <style>
-                        body { font-family: Arial, sans-serif; padding: 30px; color: #333; }
+                        body { font-family: Arial, sans-serif; padding: 30px; color: #333; text-transform: uppercase; }
                         .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 15px; margin-bottom: 25px; }
-                        .doc-title { font-size: 24px; font-weight: bold; color: #0284c7; text-transform: uppercase; }
+                        .doc-title { font-size: 24px; font-weight: bold; color: #0284c7; }
                         .info-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
                         .info-table td { padding: 8px; font-size: 14px; }
                         .content-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
@@ -394,8 +447,8 @@
                 <body>
                     <div class="header">
                         <div>
-                            <h2>ImmoGérer RDC</h2>
-                            <p>Gestion Immobilière & Prestations</p>
+                            <h2>IMMO-GÉRER RDC</h2>
+                            <p>GESTION IMMOBILIÈRE & PRESTATIONS</p>
                         </div>
                         <div style="text-align: right;">
                             <div class="doc-title">${docActuelApercu.type}</div>
@@ -405,19 +458,18 @@
                         </div>
                     </div>
                     <table class="info-table">
-                        <tr><td><strong>Client / Locataire :</strong> ${docActuelApercu.locataire_nom ? docActuelApercu.locataire_nom + ' ' + docActuelApercu.locataire_prenom : 'Client divers'}</td></tr>
-                        <tr><td><strong>Référence Bien :</strong> ${docActuelApercu.nom_bien || 'N/A'}</td></tr>
+                        <tr><td><strong>Client :</strong> ${nomClient}</td></tr>
                     </table>
                     <table class="content-table">
-                        <tr><th>Désignation des prestations / articles</th><th>Montant ($)</th></tr>
+                        <tr><th>Désignation</th><th style="text-align:center;">Qté</th><th style="text-align:right;">Prix Unit.</th><th style="text-align:center;">TVA</th><th style="text-align:right;">Total ($)</th></tr>
                         ${lignesTableHtml}
                     </table>
                     <div class="total-section">
-                        Total Général : ${parseFloat(docActuelApercu.montant).toLocaleString()} $
+                        TOTAL GÉNÉRAL : ${parseFloat(docActuelApercu.montant).toLocaleString()} $
                     </div>
                     <div class="footer">
-                        <p>ImmoGérer RDC - Siège Social : Kinshasa, RDC | RCCM : / | ID.NAT : /</p>
-                        <p>Merci de votre confiance. Conditions de paiement : Comptant à réception.</p>
+                        <p>IMMO-GÉRER RDC - SIÈGE SOCIAL : KINSHASA, RDC</p>
+                        <p>MERCI DE VOTRE CONFIANCE. CONDITIONS DE PAIEMENT : COMPTANT À RÉCEPTION.</p>
                     </div>
                     <script>
                         window.onload = function() { window.print(); }
