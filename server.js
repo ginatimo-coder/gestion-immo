@@ -55,6 +55,15 @@ pool.query(`
         statut VARCHAR(50) DEFAULT 'Payé'
     );
 
+    CREATE TABLE IF NOT EXISTS inventaire (
+        id SERIAL PRIMARY KEY,
+        designation VARCHAR(150) NOT NULL,
+        reference VARCHAR(50),
+        quantite_stock INT DEFAULT 0,
+        prix_unitaire NUMERIC(12, 2) DEFAULT 0,
+        description TEXT
+    );
+
     CREATE TABLE IF NOT EXISTS factures (
         id SERIAL PRIMARY KEY,
         numero_ref VARCHAR(50),
@@ -74,8 +83,15 @@ pool.query(`
         id SERIAL PRIMARY KEY,
         facture_id INT REFERENCES factures(id) ON DELETE CASCADE,
         designation TEXT,
+        qte INT DEFAULT 1,
+        prix NUMERIC(12, 2) DEFAULT 0,
+        tva NUMERIC(5, 2) DEFAULT 16,
         montant NUMERIC(12, 2)
     );
+
+    ALTER TABLE facture_lignes ADD COLUMN IF NOT EXISTS qte INT DEFAULT 1;
+    ALTER TABLE facture_lignes ADD COLUMN IF NOT EXISTS prix NUMERIC(12, 2) DEFAULT 0;
+    ALTER TABLE facture_lignes ADD COLUMN IF NOT EXISTS tva NUMERIC(5, 2) DEFAULT 16;
 
     CREATE TABLE IF NOT EXISTS journal_comptable (
         id SERIAL PRIMARY KEY,
@@ -150,6 +166,7 @@ app.get('/locataires', (req, res) => res.sendFile(path.join(__dirname, 'locatair
 app.get('/biens', (req, res) => res.sendFile(path.join(__dirname, 'biens.html')));
 app.get('/baux', (req, res) => res.sendFile(path.join(__dirname, 'baux.html')));
 app.get('/paiements', (req, res) => res.sendFile(path.join(__dirname, 'paiements.html')));
+app.get('/inventaire', (req, res) => res.sendFile(path.join(__dirname, 'inventaire.html')));
 app.get('/factures', (req, res) => res.sendFile(path.join(__dirname, 'factures.html')));
 app.get('/comptabilite', (req, res) => res.sendFile(path.join(__dirname, 'comptabilite.html')));
 app.get('/rh', (req, res) => res.sendFile(path.join(__dirname, 'rh.html')));
@@ -313,6 +330,38 @@ app.delete('/api/paiements/:id', async (req, res) => {
     }
 });
 
+// --- API INVENTAIRE ---
+app.get('/api/inventaire', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM inventaire ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.post('/api/inventaire', async (req, res) => {
+    try {
+        const { designation, reference, quantite_stock, prix_unitaire, description } = req.body;
+        await pool.query(
+            'INSERT INTO inventaire (designation, reference, quantite_stock, prix_unitaire, description) VALUES ($1, $2, $3, $4, $5)',
+            [designation, reference, quantite_stock || 0, prix_unitaire || 0, description]
+        );
+        res.redirect('/inventaire');
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.delete('/api/inventaire/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM inventaire WHERE id = $1', [req.params.id]);
+        res.sendStatus(200);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
 // --- API FACTURES, PROFORMAS & BL ---
 app.get('/api/factures/prochain-numero/:type', async (req, res) => {
     try {
@@ -373,10 +422,51 @@ app.post('/api/factures', async (req, res) => {
 
         if (lignes && Array.isArray(lignes)) {
             for (let l of lignes) {
-                if (l.designation && l.montant) {
+                if (l.designation) {
                     await client.query(
-                        'INSERT INTO facture_lignes (facture_id, designation, montant) VALUES ($1, $2, $3)',
-                        [factureId, l.designation, l.montant]
+                        'INSERT INTO facture_lignes (facture_id, designation, qte, prix, tva, montant) VALUES ($1, $2, $3, $4, $5, $6)',
+                        [factureId, l.designation, l.qte || 1, l.prix || 0, l.tva || 16, l.montant || 0]
+                    );
+                }
+            }
+        }
+
+        await client.query('COMMIT');
+        res.sendStatus(200);
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).send(err.message);
+    } finally {
+        client.release();
+    }
+});
+
+app.put('/api/factures/:id', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        let { numero_ref, type, locataire_id, bien_id, date_emission, date_validite, statut, lignes } = req.body;
+        const factureId = req.params.id;
+
+        let montantTotal = 0;
+        if (lignes && Array.isArray(lignes)) {
+            lignes.forEach(l => montantTotal += parseFloat(l.montant) || 0);
+        }
+
+        await client.query(
+            `UPDATE factures SET numero_ref = $1, type = $2, locataire_id = $3, bien_id = $4, montant = $5, date_emission = $6, date_validite = $7, statut = $8 WHERE id = $9`,
+            [numero_ref, type, locataire_id || null, bien_id || null, montantTotal, date_emission || null, date_validite || null, statut, factureId]
+        );
+
+        // Supprimer les anciennes lignes et réinsérer les nouvelles
+        await client.query('DELETE FROM facture_lignes WHERE facture_id = $1', [factureId]);
+
+        if (lignes && Array.isArray(lignes)) {
+            for (let l of lignes) {
+                if (l.designation) {
+                    await client.query(
+                        'INSERT INTO facture_lignes (facture_id, designation, qte, prix, tva, montant) VALUES ($1, $2, $3, $4, $5, $6)',
+                        [factureId, l.designation, l.qte || 1, l.prix || 0, l.tva || 16, l.montant || 0]
                     );
                 }
             }
