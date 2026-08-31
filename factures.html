@@ -8,9 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; text-transform: none; }
-        /* Première lettre en majuscule pour les textes descriptifs */
-        .capitalize-text { text-transform: capitalize; }
-        
         aside { width: 260px; background: white; height: 100vh; position: fixed; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; }
         .logo-area { padding: 20px; font-size: 22px; font-weight: bold; color: #0284c7; display: flex; align-items: center; gap: 10px; }
         aside ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
@@ -34,8 +31,8 @@
         .btn-email { background: #ea580c; padding: 6px 12px; font-size: 12px; color: white; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold; }
         .btn-bl { background: #0d9488; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; font-weight: bold; }
         .lignes-container { background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+        .total-global-box { font-size: 18px; font-weight: bold; text-align: right; margin-top: 15px; color: #0369a1; }
         
-        /* Modal d'Aperçu */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 30px; border-radius: 8px; width: 750px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .close-modal { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #6b7280; }
@@ -43,7 +40,6 @@
 </head>
 <body>
 
-    <!-- Menu Latéral -->
     <aside>
         <div class="logo-area">
             <i class="fa-solid fa-building-shield"></i> ImmoGérer
@@ -54,6 +50,7 @@
             <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
             <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
             <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+            <li><a href="/inventaire"><i class="fa-solid fa-boxes-stacked"></i> Inventaire & Stock</a></li>
             <li><a href="/factures" class="active"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
             <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
             <li><a href="/rh"><i class="fa-solid fa-user-tie"></i> Ressources Humaines</a></li>
@@ -61,11 +58,9 @@
         </ul>
     </aside>
 
-    <!-- Contenu Principal -->
     <main>
         <h2>Gestion des Factures, Proformas & Bons de Livraison (BL)</h2>
 
-        <!-- Formulaire -->
         <div class="card">
             <h3 id="form-title">Créer un nouveau document</h3>
             <form id="document-form" onsubmit="enregistrerDocument(event)">
@@ -73,7 +68,7 @@
                 <div class="form-grid">
                     <div>
                         <label>Type de Document :</label>
-                        <select id="type" required onchange="verifierEtGenererRef()">
+                        <select id="type" required onchange="verifierEtGenererRef(); toggleChampsPrix();">
                             <option value="Facture">Facture</option>
                             <option value="Proforma">Proforma</option>
                             <option value="Bon de Livraison">Bon de Livraison (BL)</option>
@@ -84,7 +79,7 @@
                         <input type="text" id="numero_ref" required>
                     </div>
                     <div>
-                        <label>Locataire / Client :</label>
+                        <label>Client / Locataire :</label>
                         <select id="locataire_id">
                             <option value="">-- Aucun / Divers --</option>
                         </select>
@@ -114,8 +109,8 @@
                 </div>
 
                 <div class="lignes-container">
-                    <h4>Lignes du document (Qté, Prix, TVA 16% / 0%)</h4>
-                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 10px; font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #4b5563;">
+                    <h4 id="titre-lignes">Lignes du document (Qté, Prix, TVA)</h4>
+                    <div id="entete-lignes" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 10px; font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #4b5563;">
                         <div>Désignation</div>
                         <div>Qté</div>
                         <div>Prix Unit. ($)</div>
@@ -125,6 +120,10 @@
                     </div>
                     <div id="lignes-inputs"></div>
                     <button type="button" onclick="ajouterLigneInput()" style="background: #059669; margin-top: 10px; padding: 6px 12px; font-size: 13px;">+ Ajouter une ligne</button>
+                    
+                    <div class="total-global-box" id="affichage-total-global">
+                        Total Général : <span id="valeur-total-global">0.00</span> $
+                    </div>
                 </div>
 
                 <button type="submit" id="btn-submit-doc">Enregistrer le document</button>
@@ -132,7 +131,6 @@
             </form>
         </div>
 
-        <!-- Liste -->
         <div class="card">
             <h3>Historique des Documents Émis</h3>
             <table>
@@ -150,13 +148,13 @@
         </div>
     </main>
 
-    <!-- Modal d'Aperçu (Preview) -->
+    <!-- Modal d'Aperçu -->
     <div id="previewModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="fermerPreview()">&times;</span>
             <div id="preview-body"></div>
             <div style="margin-top: 20px; text-align: right; display: flex; justify-content: space-between;">
-                <button onclick="genererBLAssocie()" class="btn-bl"><i class="fa-solid fa-truck"></i> Générer BL pour ce document</button>
+                <button onclick="genererBLAssocie()" class="btn-bl" id="btn-gen-bl"><i class="fa-solid fa-truck"></i> Générer BL pour ce document</button>
                 <button onclick="imprimerDepuisPreview()" class="btn-print"><i class="fa-solid fa-print"></i> Imprimer / Exporter PDF</button>
             </div>
         </div>
@@ -173,7 +171,7 @@
             const selectLoc = document.getElementById('locataire_id');
             selectLoc.innerHTML = '<option value="">-- Aucun / Divers --</option>';
             locatairesGlobal.forEach(l => {
-                selectLoc.innerHTML += `<option value="${l.id}">${capitaliserTexte(l.nom)} ${capitaliserTexte(l.prenom)} (${l.telephone || 'Sans tél'})</option>`;
+                selectLoc.innerHTML += `<option value="${l.id}">${capitaliserTexte(l.nom)} ${capitaliserTexte(l.prenom)}</option>`;
             });
 
             const resBiens = await fetch('/api/biens');
@@ -194,9 +192,9 @@
                 const telClient = clientObj && clientObj.telephone ? clientObj.telephone : '';
                 const emailClient = clientObj && clientObj.email ? clientObj.email : '';
                 
-                const msgWhatsapp = encodeURIComponent(`Bonjour, veuillez trouver ci-joint votre document PDF (${d.type} Réf: ${d.numero_ref}) d'un montant total de ${parseFloat(d.montant).toLocaleString()} $. Merci de votre confiance.`);
+                const msgWhatsapp = encodeURIComponent(`Bonjour, veuillez trouver ci-joint votre document PDF (${d.type} Réf: ${d.numero_ref}) d'un montant total de ${parseFloat(d.montant).toLocaleString()} $. Merci.`);
                 const linkWhatsapp = telClient ? `https://wa.me/${telClient.replace(/[^0-9]/g, '')}?text=${msgWhatsapp}` : `https://wa.me/?text=${msgWhatsapp}`;
-                const linkEmail = `mailto:${emailClient}?subject=${d.type} ${d.numero_ref}&body=Bonjour,%0A%0AVeuillez trouver en pièce jointe votre document ${d.type} référencé ${d.numero_ref} d'un montant de ${parseFloat(d.montant).toLocaleString()} $.`;
+                const linkEmail = `mailto:${emailClient}?subject=${d.type} ${d.numero_ref}&body=Bonjour,%0A%0AVeuillez trouver en pièce jointe votre ${d.type} ${d.numero_ref} d'un montant de ${parseFloat(d.montant).toLocaleString()} $.`;
 
                 tbody.innerHTML += `
                     <tr>
@@ -207,7 +205,7 @@
                         <td>
                             <button class="btn-warning" onclick="preparerModification(${d.id})">Modifier</button>
                             <button class="btn-print" onclick='ouvrirPreview(${JSON.stringify(d)})'>Aperçu</button>
-                            <a href="${linkWhatsapp}" target="_blank" class="btn-whatsapp" title="Envoyer le message WhatsApp pour demander l'envoi du PDF"><i class="fa-brands fa-whatsapp"></i> WhatsApp PDF</a>
+                            <a href="${linkWhatsapp}" target="_blank" class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> WhatsApp PDF</a>
                             <a href="${linkEmail}" class="btn-email"><i class="fa-solid fa-envelope"></i> Email</a>
                             <button class="btn-danger" onclick="supprimerDocument(${d.id})">Supprimer</button>
                         </td>
@@ -225,6 +223,16 @@
             return str.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
         }
 
+        function toggleChampsPrix() {
+            const type = document.getElementById('type').value;
+            const isBL = (type === 'Bon de Livraison');
+            document.querySelectorAll('.champ-prix-visible').forEach(el => {
+                el.style.display = isBL ? 'none' : 'block';
+            });
+            document.getElementById('entete-lignes').style.gridTemplateColumns = isBL ? '3fr 1fr auto' : '2fr 1fr 1fr 1fr 1fr auto';
+            document.getElementById('affichage-total-global').style.display = isBL ? 'none' : 'block';
+        }
+
         async function verifierEtGenererRef() {
             if(!document.getElementById('document_id_edit').value) {
                 genererNumeroRef();
@@ -239,55 +247,68 @@
         }
 
         function ajouterLigneInput(designation = '', qte = 1, prix = 0, tva = 16) {
+            const type = document.getElementById('type').value;
+            const isBL = (type === 'Bon de Livraison');
             const container = document.getElementById('lignes-inputs');
             const div = document.createElement('div');
-            div.className = 'ligne-grid ligne-item';
+            div.className = 'ligne-item';
+            div.style.display = 'grid';
+            div.style.gridTemplateColumns = isBL ? '3fr 1fr auto' : '2fr 1fr 1fr 1fr 1fr auto';
+            div.style.gap = '10px';
+            div.style.alignItems = 'center';
+            div.style.marginBottom = '10px';
+
             div.innerHTML = `
-                <div><input type="text" class="ligne-desc" placeholder="Désignation (Eau, Électricité...)" value="${designation}" oninput="this.value = capitaliserTexte(this.value)" required></div>
-                <div><input type="number" step="1" min="1" class="ligne-qte" value="${qte}" oninput="calculerTotalLigne(this)" required></div>
-                <div><input type="number" step="0.01" min="0" class="ligne-prix" value="${prix}" oninput="calculerTotalLigne(this)" required></div>
-                <div>
-                    <select class="ligne-tva" onchange="calculerTotalLigne(this)">
+                <div><input type="text" class="ligne-desc" placeholder="Désignation..." value="${designation}" oninput="this.value = capitaliserTexte(this.value)" required></div>
+                <div><input type="number" step="1" min="1" class="ligne-qte" value="${qte}" oninput="calculerTotalGlobal()" required></div>
+                <div class="champ-prix-visible" style="display: ${isBL ? 'none' : 'block'};"><input type="number" step="0.01" min="0" class="ligne-prix" value="${prix}" oninput="calculerTotalGlobal()" required></div>
+                <div class="champ-prix-visible" style="display: ${isBL ? 'none' : 'block'};">
+                    <select class="ligne-tva" onchange="calculerTotalGlobal()">
                         <option value="16" ${tva == 16 ? 'selected' : ''}>16%</option>
                         <option value="0" ${tva == 0 ? 'selected' : ''}>0%</option>
                     </select>
                 </div>
-                <div><input type="text" class="ligne-total" readonly style="background: #e5e7eb; font-weight: bold;" value="0.00"></div>
-                <div><button type="button" class="btn-danger" onclick="this.parentElement.parentElement.remove(); incrementerLigneSuivante();" style="padding: 10px;">X</button></div>
+                <div class="champ-prix-visible" style="display: ${isBL ? 'none' : 'block'};"><input type="text" class="ligne-total" readonly style="background: #e5e7eb; font-weight: bold;" value="0.00"></div>
+                <div><button type="button" class="btn-danger" onclick="this.parentElement.parentElement.remove(); calculerTotalGlobal();" style="padding: 10px;">X</button></div>
             `;
             container.appendChild(div);
-            calculerTotalLigne(div.querySelector('.ligne-qte'));
-            incrementerLigneSuivante();
+            calculerTotalGlobal();
         }
 
-        function incrementerLigneSuivante() {
-            // Incrémentation logique si besoin d'ajuster dynamiquement à l'ajout de lignes
-        }
+        function calculerTotalGlobal() {
+            let totalGeneral = 0;
+            document.querySelectorAll('.ligne-item').forEach(row => {
+                const qte = parseFloat(row.querySelector('.ligne-qte').value) || 0;
+                const prixInput = row.querySelector('.ligne-prix');
+                const tvaSelect = row.querySelector('.ligne-tva');
+                const totalField = row.querySelector('.ligne-total');
 
-        function calculerTotalLigne(element) {
-            const row = element.closest('.ligne-item');
-            const qte = parseFloat(row.querySelector('.ligne-qte').value) || 0;
-            const prix = parseFloat(row.querySelector('.ligne-prix').value) || 0;
-            const tva = parseFloat(row.querySelector('.ligne-tva').value) || 0;
-
-            const sousTotal = qte * prix;
-            const totalTTC = sousTotal * (1 + (tva / 100));
-            row.querySelector('.ligne-total').value = totalTTC.toFixed(2);
+                if (prixInput && tvaSelect && totalField) {
+                    const prix = parseFloat(prixInput.value) || 0;
+                    const tva = parseFloat(tvaSelect.value) || 0;
+                    const sousTotal = qte * prix;
+                    const totalTTC = sousTotal * (1 + (tva / 100));
+                    totalField.value = totalTTC.toFixed(2);
+                    totalGeneral += totalTTC;
+                }
+            });
+            document.getElementById('valeur-total-global').innerText = totalGeneral.toFixed(2);
         }
 
         async function enregistrerDocument(event) {
             event.preventDefault();
             const id = document.getElementById('document_id_edit').value;
+            const typeDoc = document.getElementById('type').value;
             
             const lignes = [];
             document.querySelectorAll('.ligne-item').forEach(item => {
                 const designation = capitaliserTexte(item.querySelector('.ligne-desc').value);
                 const qte = item.querySelector('.ligne-qte').value;
-                const prix = item.querySelector('.ligne-prix').value;
-                const tva = item.querySelector('.ligne-tva').value;
-                const montantTotalLigne = item.querySelector('.ligne-total').value;
+                const prix = typeDoc === 'Bon de Livraison' ? 0 : (item.querySelector('.ligne-prix').value || 0);
+                const tva = typeDoc === 'Bon de Livraison' ? 0 : (item.querySelector('.ligne-tva').value || 16);
+                const montantTotalLigne = typeDoc === 'Bon de Livraison' ? 0 : (item.querySelector('.ligne-total').value || 0);
 
-                if(designation && prix) {
+                if(designation) {
                     lignes.push({ designation, qte, prix, tva, montant: montantTotalLigne });
                 }
             });
@@ -298,7 +319,7 @@
             }
 
             const data = {
-                type: document.getElementById('type').value,
+                type: typeDoc,
                 numero_ref: document.getElementById('numero_ref').value,
                 locataire_id: document.getElementById('locataire_id').value || null,
                 bien_id: document.getElementById('bien_id').value || null,
@@ -334,6 +355,7 @@
             document.getElementById('date_validite').value = d.date_validite ? d.date_validite.split('T')[0] : '';
             document.getElementById('statut').value = d.statut;
 
+            toggleChampsPrix();
             document.getElementById('lignes-inputs').innerHTML = '';
             if (d.lignes && d.lignes.length > 0) {
                 d.lignes.forEach(l => ajouterLigneInput(l.designation, l.qte || 1, l.montant / (l.qte || 1), l.tva || 16));
@@ -354,6 +376,7 @@
             document.getElementById('btn-submit-doc').innerText = "Enregistrer le document";
             document.getElementById('btn-cancel-edit').style.display = 'none';
             document.getElementById('lignes-inputs').innerHTML = '';
+            toggleChampsPrix();
             ajouterLigneInput();
             genererNumeroRef();
         }
@@ -367,17 +390,17 @@
 
         function ouvrirPreview(d) {
             docActuelApercu = d;
+            const isBL = (d.type === 'Bon de Livraison');
+            document.getElementById('btn-gen-bl').style.display = isBL ? 'none' : 'inline-block';
+
             let lignesHtml = '';
             if (d.lignes && d.lignes.length > 0) {
                 d.lignes.forEach(l => {
-                    lignesHtml += `
-                        <tr>
-                            <td style="border: 1px solid #cbd5e1; padding: 8px;">${capitaliserTexte(l.designation)}</td>
-                            <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${l.qte || 1}</td>
-                            <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">${(l.montant / (l.qte || 1)).toLocaleString()} $</td>
-                            <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${l.tva || 16}%</td>
-                            <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">${parseFloat(l.montant).toLocaleString()} $</td>
-                        </tr>`;
+                    if (isBL) {
+                        lignesHtml += `<tr><td style="border: 1px solid #cbd5e1; padding: 8px;">${capitaliserTexte(l.designation)}</td><td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${l.qte || 1}</td></tr>`;
+                    } else {
+                        lignesHtml += `<tr><td style="border: 1px solid #cbd5e1; padding: 8px;">${capitaliserTexte(l.designation)}</td><td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${l.qte || 1}</td><td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">${(l.montant / (l.qte || 1)).toLocaleString()} $</td><td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${l.tva || 16}%</td><td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">${parseFloat(l.montant).toLocaleString()} $</td></tr>`;
+                    }
                 });
             }
 
@@ -403,16 +426,14 @@
                             <tr style="background: #f1f5f9;">
                                 <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">Désignation</th>
                                 <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">Qté</th>
-                                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Prix Unit.</th>
-                                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">TVA</th>
-                                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Total ($)</th>
+                                ${isBL ? '' : '<th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Prix Unit.</th><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">TVA</th><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Total ($)</th>'}
                             </tr>
                         </thead>
                         <tbody>
                             ${lignesHtml}
                         </tbody>
                     </table>
-                    <h3 style="text-align: right; margin-top: 20px;">Total Général : ${parseFloat(d.montant).toLocaleString()} $</h3>
+                    ${isBL ? '' : `<h3 style="text-align: right; margin-top: 20px;">Total Général : ${parseFloat(d.montant).toLocaleString()} $</h3>`}
                     <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #cbd5e1; padding-top: 10px;">
                         Immo-Gérer RDC - Kinshasa | Merci de votre confiance.
                     </div>
@@ -428,87 +449,26 @@
 
         function genererBLAssocie() {
             if (!docActuelApercu) return;
-            // Pré-remplir le formulaire avec le type Bon de Livraison basé sur la facture en cours
             document.getElementById('type').value = 'Bon de Livraison';
+            toggleChampsPrix();
             genererNumeroRef();
             document.getElementById('locataire_id').value = docActuelApercu.locataire_id || '';
             document.getElementById('bien_id').value = docActuelApercu.bien_id || '';
             
-            // Copier les lignes
             document.getElementById('lignes-inputs').innerHTML = '';
             if (docActuelApercu.lignes && docActuelApercu.lignes.length > 0) {
-                docActuelApercu.lignes.forEach(l => ajouterLigneInput(l.designation, l.qte || 1, l.montant / (l.qte || 1), l.tva || 16));
+                docActuelApercu.lignes.forEach(l => ajouterLigneInput(l.designation, l.qte || 1, 0, 0));
             }
 
             fermerPreview();
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            alert("Un Bon de Livraison a été pré-initialisé à partir de ce document. Vérifiez et cliquez sur enregistrer.");
+            alert("Bon de Livraison pré-initialisé sans prix (adapté pour la livraison).");
         }
 
         function imprimerDepuisPreview() {
             if (!docActuelApercu) return;
-            let lignesTableHtml = '';
-            if (docActuelApercu.lignes && docActuelApercu.lignes.length > 0) {
-                docActuelApercu.lignes.forEach(l => {
-                    lignesTableHtml += `<tr><td>${capitaliserTexte(l.designation)}</td><td style="text-align:center;">${l.qte || 1}</td><td style="text-align:right;">${(l.montant / (l.qte || 1)).toLocaleString()} $</td><td style="text-align:center;">${l.tva || 16}%</td><td style="text-align:right;">${parseFloat(l.montant).toLocaleString()} $</td></tr>`;
-                });
-            }
-
-            const clientObj = locatairesGlobal.find(l => l.id === docActuelApercu.locataire_id);
-            const nomClient = clientObj ? `${capitaliserTexte(clientObj.nom)} ${capitaliserTexte(clientObj.prenom)}` : 'Client Divers';
-
-            const fenetreImpression = window.open('', '_blank');
-            fenetreImpression.document.write(`
-                <html>
-                <head>
-                    <title>${docActuelApercu.type} - ${docActuelApercu.numero_ref}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 30px; color: #333; }
-                        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 15px; margin-bottom: 25px; }
-                        .doc-title { font-size: 24px; font-weight: bold; color: #0284c7; }
-                        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                        .info-table td { padding: 8px; font-size: 14px; }
-                        .content-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                        .content-table th, .content-table td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 14px; }
-                        .content-table th { background: #f1f5f9; }
-                        .total-section { float: right; font-size: 18px; font-weight: bold; margin-bottom: 40px; }
-                        .footer { position: fixed; bottom: 20px; left: 30px; right: 30px; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 10px; font-size: 12px; color: #64748b; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <div>
-                            <h2>Immo-Gérer RDC</h2>
-                            <p>Gestion Immobilière & Prestations</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <div class="doc-title">${capitaliserTexte(docActuelApercu.type)}</div>
-                            <p><strong>N° Réf :</strong> ${docActuelApercu.numero_ref}</p>
-                            <p><strong>Date :</strong> ${docActuelApercu.date_emission ? docActuelApercu.date_emission.split('T')[0] : '-'}</p>
-                            <p><strong>Validité :</strong> ${docActuelApercu.date_validite ? docActuelApercu.date_validite.split('T')[0] : 'N/A'}</p>
-                        </div>
-                    </div>
-                    <table class="info-table">
-                        <tr><td><strong>Client :</strong> ${nomClient}</td></tr>
-                    </table>
-                    <table class="content-table">
-                        <tr><th>Désignation</th><th style="text-align:center;">Qté</th><th style="text-align:right;">Prix Unit.</th><th style="text-align:center;">TVA</th><th style="text-align:right;">Total ($)</th></tr>
-                        ${lignesTableHtml}
-                    </table>
-                    <div class="total-section">
-                        Total Général : ${parseFloat(docActuelApercu.montant).toLocaleString()} $
-                    </div>
-                    <div class="footer">
-                        <p>Immo-Gérer RDC - Siège Social : Kinshasa, RDC</p>
-                        <p>Merci de votre confiance. Conditions de paiement : Comptant à réception.</p>
-                    </div>
-                    <script>
-                        window.onload = function() { window.print(); }
-                    <\/script>
-                </body>
-                </html>
-            `);
-            fenetreImpression.document.close();
+            ouvrirPreview(docActuelApercu);
+            setTimeout(() => { window.print(); }, 300);
         }
 
         resetFormulaire();
