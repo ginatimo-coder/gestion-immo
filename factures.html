@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; text-transform: none; }
+        /* Première lettre en majuscule pour les textes descriptifs */
+        .capitalize-text { text-transform: capitalize; }
+        
         aside { width: 260px; background: white; height: 100vh; position: fixed; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; }
         .logo-area { padding: 20px; font-size: 22px; font-weight: bold; color: #0284c7; display: flex; align-items: center; gap: 10px; }
         aside ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
@@ -27,9 +30,9 @@
         .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 12px; }
         .btn-warning { background: #d97706; padding: 6px 12px; font-size: 12px; color: white; }
         .btn-print { background: #4f46e5; padding: 6px 12px; font-size: 12px; color: white; }
-        .btn-bl { background: #059669; padding: 6px 12px; font-size: 12px; color: white; }
         .btn-whatsapp { background: #25d366; padding: 6px 12px; font-size: 12px; color: white; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold; }
         .btn-email { background: #ea580c; padding: 6px 12px; font-size: 12px; color: white; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold; }
+        .btn-bl { background: #0d9488; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; font-weight: bold; }
         .lignes-container { background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
         
         /* Modal d'Aperçu */
@@ -152,7 +155,8 @@
         <div class="modal-content">
             <span class="close-modal" onclick="fermerPreview()">&times;</span>
             <div id="preview-body"></div>
-            <div style="margin-top: 20px; text-align: right;">
+            <div style="margin-top: 20px; text-align: right; display: flex; justify-content: space-between;">
+                <button onclick="genererBLAssocie()" class="btn-bl"><i class="fa-solid fa-truck"></i> Générer BL pour ce document</button>
                 <button onclick="imprimerDepuisPreview()" class="btn-print"><i class="fa-solid fa-print"></i> Imprimer / Exporter PDF</button>
             </div>
         </div>
@@ -163,19 +167,13 @@
         let locatairesGlobal = [];
         let docActuelApercu = null;
 
-        // Fonction pour mettre une majuscule à chaque début de mot
-        function capitaliserMots(str) {
-            if (!str) return '';
-            return str.toLowerCase().replace(/(^|\s)\S/g, l => l.toUpperCase());
-        }
-
         async function chargerDonnees() {
             const resLoc = await fetch('/api/locataires');
             locatairesGlobal = await resLoc.json();
             const selectLoc = document.getElementById('locataire_id');
             selectLoc.innerHTML = '<option value="">-- Aucun / Divers --</option>';
             locatairesGlobal.forEach(l => {
-                selectLoc.innerHTML += `<option value="${l.id}">${capitaliserMots(l.nom)} ${capitaliserMots(l.prenom)} (${l.telephone || 'Sans tél'})</option>`;
+                selectLoc.innerHTML += `<option value="${l.id}">${capitaliserTexte(l.nom)} ${capitaliserTexte(l.prenom)} (${l.telephone || 'Sans tél'})</option>`;
             });
 
             const resBiens = await fetch('/api/biens');
@@ -183,7 +181,7 @@
             const selectBien = document.getElementById('bien_id');
             selectBien.innerHTML = '<option value="">-- Aucun / Divers --</option>';
             biens.forEach(b => {
-                selectBien.innerHTML += `<option value="${b.id}">${capitaliserMots(b.nom_bien)}</option>`;
+                selectBien.innerHTML += `<option value="${b.id}">${capitaliserTexte(b.nom_bien)}</option>`;
             });
 
             const resFac = await fetch('/api/factures');
@@ -195,24 +193,21 @@
                 const clientObj = locatairesGlobal.find(l => l.id === d.locataire_id);
                 const telClient = clientObj && clientObj.telephone ? clientObj.telephone : '';
                 const emailClient = clientObj && clientObj.email ? clientObj.email : '';
-                const nomClient = clientObj ? `${capitaliserMots(clientObj.nom)} ${capitaliserMots(clientObj.prenom)}` : 'Client Divers';
-
-                // Message WhatsApp orienté fichier PDF / Document
-                const msgWhatsapp = encodeURIComponent(`Bonjour ${nomClient},\n\nVeuillez trouver ci-joint votre document *${d.type}* (Réf: *${d.numero_ref}*) d'un montant total de *${parseFloat(d.montant).toLocaleString()} $*.\n\nMerci de votre confiance !`);
+                
+                const msgWhatsapp = encodeURIComponent(`Bonjour, veuillez trouver ci-joint votre document PDF (${d.type} Réf: ${d.numero_ref}) d'un montant total de ${parseFloat(d.montant).toLocaleString()} $. Merci de votre confiance.`);
                 const linkWhatsapp = telClient ? `https://wa.me/${telClient.replace(/[^0-9]/g, '')}?text=${msgWhatsapp}` : `https://wa.me/?text=${msgWhatsapp}`;
-                const linkEmail = `mailto:${emailClient}?subject=${d.type} ${d.numero_ref}&body=Bonjour%20${encodeURIComponent(nomClient)},%0A%0AVeuillez trouver en pièce jointe votre ${d.type} référencé ${d.numero_ref} d'un montant de ${parseFloat(d.montant).toLocaleString()} $.%0A%0ACordialement.`;
+                const linkEmail = `mailto:${emailClient}?subject=${d.type} ${d.numero_ref}&body=Bonjour,%0A%0AVeuillez trouver en pièce jointe votre document ${d.type} référencé ${d.numero_ref} d'un montant de ${parseFloat(d.montant).toLocaleString()} $.`;
 
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong>${d.numero_ref || 'N/A'}</strong><br><span style="color: #0284c7; font-weight: 600;">${d.type}</span></td>
-                        <td>${d.locataire_nom ? capitaliserMots(d.locataire_nom) + ' ' + capitaliserMots(d.locataire_prenom) : 'Client divers'}<br><small>${d.nom_bien ? capitaliserMots(d.nom_bien) : ''}</small></td>
+                        <td><strong>${d.numero_ref || 'N/A'}</strong><br><span style="color: #0284c7; font-weight: 600;">${capitaliserTexte(d.type)}</span></td>
+                        <td>${d.locataire_nom ? capitaliserTexte(d.locataire_nom) + ' ' + capitaliserTexte(d.locataire_prenom) : 'Client Divers'}<br><small>${d.nom_bien ? capitaliserTexte(d.nom_bien) : ''}</small></td>
                         <td><strong>${parseFloat(d.montant).toLocaleString()} $</strong></td>
                         <td>Émis: ${d.date_emission ? d.date_emission.split('T')[0] : '-'}<br><small>Valide: ${d.date_validite ? d.date_validite.split('T')[0] : 'N/A'}</small></td>
                         <td>
                             <button class="btn-warning" onclick="preparerModification(${d.id})">Modifier</button>
                             <button class="btn-print" onclick='ouvrirPreview(${JSON.stringify(d)})'>Aperçu</button>
-                            <button class="btn-bl" onclick='genererBLDepuisFacture(${JSON.stringify(d)})'>Générer BL</button>
-                            <a href="${linkWhatsapp}" target="_blank" class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> WhatsApp PDF</a>
+                            <a href="${linkWhatsapp}" target="_blank" class="btn-whatsapp" title="Envoyer le message WhatsApp pour demander l'envoi du PDF"><i class="fa-brands fa-whatsapp"></i> WhatsApp PDF</a>
                             <a href="${linkEmail}" class="btn-email"><i class="fa-solid fa-envelope"></i> Email</a>
                             <button class="btn-danger" onclick="supprimerDocument(${d.id})">Supprimer</button>
                         </td>
@@ -223,6 +218,11 @@
             if(!document.getElementById('document_id_edit').value) {
                 genererNumeroRef();
             }
+        }
+
+        function capitaliserTexte(str) {
+            if (!str) return '';
+            return str.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
         }
 
         async function verifierEtGenererRef() {
@@ -243,7 +243,7 @@
             const div = document.createElement('div');
             div.className = 'ligne-grid ligne-item';
             div.innerHTML = `
-                <div><input type="text" class="ligne-desc" placeholder="Désignation (Eau, Électricité...)" value="${designation}" oninput="this.value = capitaliserMotsInput(this.value)" required></div>
+                <div><input type="text" class="ligne-desc" placeholder="Désignation (Eau, Électricité...)" value="${designation}" oninput="this.value = capitaliserTexte(this.value)" required></div>
                 <div><input type="number" step="1" min="1" class="ligne-qte" value="${qte}" oninput="calculerTotalLigne(this)" required></div>
                 <div><input type="number" step="0.01" min="0" class="ligne-prix" value="${prix}" oninput="calculerTotalLigne(this)" required></div>
                 <div>
@@ -253,14 +253,15 @@
                     </select>
                 </div>
                 <div><input type="text" class="ligne-total" readonly style="background: #e5e7eb; font-weight: bold;" value="0.00"></div>
-                <div><button type="button" class="btn-danger" onclick="supprimerLigneInput(this)" style="padding: 10px;">X</button></div>
+                <div><button type="button" class="btn-danger" onclick="this.parentElement.parentElement.remove(); incrementerLigneSuivante();" style="padding: 10px;">X</button></div>
             `;
             container.appendChild(div);
             calculerTotalLigne(div.querySelector('.ligne-qte'));
+            incrementerLigneSuivante();
         }
 
-        function capitaliserMotsInput(str) {
-            return str.replace(/(^|\s)\S/g, l => l.toUpperCase());
+        function incrementerLigneSuivante() {
+            // Incrémentation logique si besoin d'ajuster dynamiquement à l'ajout de lignes
         }
 
         function calculerTotalLigne(element) {
@@ -274,18 +275,13 @@
             row.querySelector('.ligne-total').value = totalTTC.toFixed(2);
         }
 
-        function supprimerLigneInput(btn) {
-            btn.closest('.ligne-item').remove();
-            // Incrémentation / rafraîchissement dynamique si besoin
-        }
-
         async function enregistrerDocument(event) {
             event.preventDefault();
             const id = document.getElementById('document_id_edit').value;
             
             const lignes = [];
             document.querySelectorAll('.ligne-item').forEach(item => {
-                const designation = item.querySelector('.ligne-desc').value;
+                const designation = capitaliserTexte(item.querySelector('.ligne-desc').value);
                 const qte = item.querySelector('.ligne-qte').value;
                 const prix = item.querySelector('.ligne-prix').value;
                 const tva = item.querySelector('.ligne-tva').value;
@@ -323,25 +319,6 @@
 
             resetFormulaire();
             chargerDonnees();
-        }
-
-        // Fonction pour générer un BL directement basé sur les articles d'une facture
-        async function genererBLDepuisFacture(d) {
-            document.getElementById('type').value = 'Bon de Livraison';
-            await genererNumeroRef();
-            document.getElementById('locataire_id').value = d.locataire_id || '';
-            document.getElementById('bien_id').value = d.bien_id || '';
-            
-            // Vider et recharger les lignes de la facture dans le formulaire
-            document.getElementById('lignes-inputs').innerHTML = '';
-            if (d.lignes && d.lignes.length > 0) {
-                d.lignes.forEach(l => ajouterLigneInput(l.designation, l.qte || 1, l.montant / (l.qte || 1), l.tva || 16));
-            }
-
-            document.getElementById('form-title').innerText = "Générer un Bon de Livraison (depuis " + d.numero_ref + ")";
-            document.getElementById('btn-submit-doc').innerText = "Enregistrer le Bon de Livraison";
-            document.getElementById('btn-cancel-edit').style.display = 'inline-block';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function preparerModification(id) {
@@ -395,7 +372,7 @@
                 d.lignes.forEach(l => {
                     lignesHtml += `
                         <tr>
-                            <td style="border: 1px solid #cbd5e1; padding: 8px;">${l.designation}</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 8px;">${capitaliserTexte(l.designation)}</td>
                             <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${l.qte || 1}</td>
                             <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">${(l.montant / (l.qte || 1)).toLocaleString()} $</td>
                             <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${l.tva || 16}%</td>
@@ -405,7 +382,7 @@
             }
 
             const clientObj = locatairesGlobal.find(l => l.id === d.locataire_id);
-            const nomClient = clientObj ? `${capitaliserMots(clientObj.nom)} ${capitaliserMots(clientObj.prenom)}` : 'Client Divers';
+            const nomClient = clientObj ? `${capitaliserTexte(clientObj.nom)} ${capitaliserTexte(clientObj.prenom)}` : 'Client Divers';
 
             const htmlContent = `
                 <div style="font-family: Arial, sans-serif; color: #333;">
@@ -415,7 +392,7 @@
                             <p style="margin: 2px 0; font-size: 13px;">Gestion Immobilière & Prestations</p>
                         </div>
                         <div style="text-align: right;">
-                            <h2 style="margin: 0; color: #0284c7;">${d.type}</h2>
+                            <h2 style="margin: 0; color: #0284c7;">${capitaliserTexte(d.type)}</h2>
                             <p style="margin: 2px 0; font-size: 13px;"><strong>N° Réf :</strong> ${d.numero_ref}</p>
                             <p style="margin: 2px 0; font-size: 13px;"><strong>Date :</strong> ${d.date_emission ? d.date_emission.split('T')[0] : '-'}</p>
                         </div>
@@ -449,17 +426,36 @@
             document.getElementById('previewModal').style.display = 'none';
         }
 
+        function genererBLAssocie() {
+            if (!docActuelApercu) return;
+            // Pré-remplir le formulaire avec le type Bon de Livraison basé sur la facture en cours
+            document.getElementById('type').value = 'Bon de Livraison';
+            genererNumeroRef();
+            document.getElementById('locataire_id').value = docActuelApercu.locataire_id || '';
+            document.getElementById('bien_id').value = docActuelApercu.bien_id || '';
+            
+            // Copier les lignes
+            document.getElementById('lignes-inputs').innerHTML = '';
+            if (docActuelApercu.lignes && docActuelApercu.lignes.length > 0) {
+                docActuelApercu.lignes.forEach(l => ajouterLigneInput(l.designation, l.qte || 1, l.montant / (l.qte || 1), l.tva || 16));
+            }
+
+            fermerPreview();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            alert("Un Bon de Livraison a été pré-initialisé à partir de ce document. Vérifiez et cliquez sur enregistrer.");
+        }
+
         function imprimerDepuisPreview() {
             if (!docActuelApercu) return;
             let lignesTableHtml = '';
             if (docActuelApercu.lignes && docActuelApercu.lignes.length > 0) {
                 docActuelApercu.lignes.forEach(l => {
-                    lignesTableHtml += `<tr><td>${l.designation}</td><td style="text-align:center;">${l.qte || 1}</td><td style="text-align:right;">${(l.montant / (l.qte || 1)).toLocaleString()} $</td><td style="text-align:center;">${l.tva || 16}%</td><td style="text-align:right;">${parseFloat(l.montant).toLocaleString()} $</td></tr>`;
+                    lignesTableHtml += `<tr><td>${capitaliserTexte(l.designation)}</td><td style="text-align:center;">${l.qte || 1}</td><td style="text-align:right;">${(l.montant / (l.qte || 1)).toLocaleString()} $</td><td style="text-align:center;">${l.tva || 16}%</td><td style="text-align:right;">${parseFloat(l.montant).toLocaleString()} $</td></tr>`;
                 });
             }
 
             const clientObj = locatairesGlobal.find(l => l.id === docActuelApercu.locataire_id);
-            const nomClient = clientObj ? `${capitaliserMots(clientObj.nom)} ${capitaliserMots(clientObj.prenom)}` : 'Client Divers';
+            const nomClient = clientObj ? `${capitaliserTexte(clientObj.nom)} ${capitaliserTexte(clientObj.prenom)}` : 'Client Divers';
 
             const fenetreImpression = window.open('', '_blank');
             fenetreImpression.document.write(`
@@ -486,7 +482,7 @@
                             <p>Gestion Immobilière & Prestations</p>
                         </div>
                         <div style="text-align: right;">
-                            <div class="doc-title">${docActuelApercu.type}</div>
+                            <div class="doc-title">${capitaliserTexte(docActuelApercu.type)}</div>
                             <p><strong>N° Réf :</strong> ${docActuelApercu.numero_ref}</p>
                             <p><strong>Date :</strong> ${docActuelApercu.date_emission ? docActuelApercu.date_emission.split('T')[0] : '-'}</p>
                             <p><strong>Validité :</strong> ${docActuelApercu.date_validite ? docActuelApercu.date_validite.split('T')[0] : 'N/A'}</p>
