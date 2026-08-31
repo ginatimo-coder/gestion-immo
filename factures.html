@@ -23,13 +23,17 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
         button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         button:hover { background: #0369a1; }
-        .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 13px; }
-        .btn-danger:hover { background: #b91c1c; }
-        .btn-warning { background: #d97706; padding: 6px 12px; font-size: 13px; color: white; }
-        .btn-warning:hover { background: #b45309; }
-        .btn-print { background: #4f46e5; padding: 6px 12px; font-size: 13px; color: white; }
-        .btn-print:hover { background: #4338ca; }
+        .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 12px; }
+        .btn-warning { background: #d97706; padding: 6px 12px; font-size: 12px; color: white; }
+        .btn-print { background: #4f46e5; padding: 6px 12px; font-size: 12px; color: white; }
+        .btn-whatsapp { background: #25d366; padding: 6px 12px; font-size: 12px; color: white; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold; }
+        .btn-email { background: #ea580c; padding: 6px 12px; font-size: 12px; color: white; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold; }
         .lignes-container { background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+        
+        /* Modal d'Aperçu */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 700px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .close-modal { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #6b7280; }
     </style>
 </head>
 <body>
@@ -56,7 +60,7 @@
     <main>
         <h2>Gestion des Factures, Proformas & Bons de Livraison (BL)</h2>
 
-        <!-- Section 1 : Formulaire de Création -->
+        <!-- Formulaire -->
         <div class="card">
             <h3 id="form-title">Créer un nouveau document</h3>
             <form id="document-form" onsubmit="enregistrerDocument(event)">
@@ -64,7 +68,7 @@
                 <div class="form-grid">
                     <div>
                         <label>Type de Document :</label>
-                        <select id="type" required onchange="genererNumeroRef()">
+                        <select id="type" required onchange="verifierEtGenererRef()">
                             <option value="Facture">Facture</option>
                             <option value="Proforma">Proforma</option>
                             <option value="Bon de Livraison">Bon de Livraison (BL)</option>
@@ -72,7 +76,7 @@
                     </div>
                     <div>
                         <label>Numéro de Référence :</label>
-                        <input type="text" id="numero_ref" required readonly style="background: #e5e7eb;">
+                        <input type="text" id="numero_ref" required>
                     </div>
                     <div>
                         <label>Locataire / Client :</label>
@@ -104,7 +108,6 @@
                     </div>
                 </div>
 
-                <!-- Section des Lignes (Articles / Prestations / Eau / Électricité) -->
                 <div class="lignes-container">
                     <h4>Lignes du document (Articles, Eau, Électricité, Loyer...)</h4>
                     <div id="lignes-inputs"></div>
@@ -116,7 +119,7 @@
             </form>
         </div>
 
-        <!-- Section 2 : Liste des Documents -->
+        <!-- Liste -->
         <div class="card">
             <h3>Historique des Documents Émis</h3>
             <table>
@@ -124,7 +127,6 @@
                     <tr>
                         <th>Réf / Type</th>
                         <th>Client / Bien</th>
-                        <th>Détails des Lignes</th>
                         <th>Montant Total</th>
                         <th>Dates</th>
                         <th>Actions</th>
@@ -135,16 +137,29 @@
         </div>
     </main>
 
+    <!-- Modal d'Aperçu (Preview) -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="fermerPreview()">&times;</span>
+            <div id="preview-body"></div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="imprimerDepuisPreview()" class="btn-print"><i class="fa-solid fa-print"></i> Imprimer / Exporter PDF</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let documentsGlobal = [];
+        let locatairesGlobal = [];
+        let docActuelApercu = null;
 
         async function chargerDonnees() {
             const resLoc = await fetch('/api/locataires');
-            const locataires = await resLoc.json();
+            locatairesGlobal = await resLoc.json();
             const selectLoc = document.getElementById('locataire_id');
             selectLoc.innerHTML = '<option value="">-- Aucun / Divers --</option>';
-            locataires.forEach(l => {
-                selectLoc.innerHTML += `<option value="${l.id}">${l.nom} ${l.prenom}</option>`;
+            locatairesGlobal.forEach(l => {
+                selectLoc.innerHTML += `<option value="${l.id}">${l.nom} ${l.prenom} (${l.telephone || 'Sans tél'})</option>`;
             });
 
             const resBiens = await fetch('/api/biens');
@@ -161,31 +176,38 @@
             tbody.innerHTML = '';
 
             documentsGlobal.forEach(d => {
-                let lignesHtml = '<ul>';
-                if (d.lignes && d.lignes.length > 0) {
-                    d.lignes.forEach(l => {
-                        lignesHtml += `<li>${l.designation} : <strong>${parseFloat(l.montant).toLocaleString()} $</strong></li>`;
-                    });
-                } else {
-                    lignesHtml += `<li>Prestation unique : ${parseFloat(d.montant).toLocaleString()} $</li>`;
-                }
-                lignesHtml += '</ul>';
+                const clientObj = locatairesGlobal.find(l => l.id === d.locataire_id);
+                const telClient = clientObj && clientObj.telephone ? clientObj.telephone : '';
+                const emailClient = clientObj && clientObj.email ? clientObj.email : '';
+                
+                // Liens WhatsApp et Email
+                const msgWhatsapp = encodeURIComponent(`Bonjour, voici votre ${d.type} (Réf: ${d.numero_ref}) d'un montant de ${parseFloat(d.montant).toLocaleString()} $. Merci de votre confiance.`);
+                const linkWhatsapp = telClient ? `https://wa.me/${telClient.replace(/[^0-9]/g, '')}?text=${msgWhatsapp}` : `https://wa.me/?text=${msgWhatsapp}`;
+                const linkEmail = `mailto:${emailClient}?subject=${d.type} ${d.numero_ref}&body=Bonjour,%0A%0AVoici votre document ${d.type} référencé ${d.numero_ref} pour un montant total de ${parseFloat(d.montant).toLocaleString()} $.`;
 
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>${d.numero_ref || 'N/A'}</strong><br><span style="color: #0284c7; font-weight: 600;">${d.type}</span></td>
                         <td>${d.locataire_nom ? d.locataire_nom + ' ' + d.locataire_prenom : 'Client divers'}<br><small>${d.nom_bien || ''}</small></td>
-                        <td>${lignesHtml}</td>
                         <td><strong>${parseFloat(d.montant).toLocaleString()} $</strong></td>
                         <td>Émis: ${d.date_emission ? d.date_emission.split('T')[0] : '-'}<br><small>Valide: ${d.date_validite ? d.date_validite.split('T')[0] : 'N/A'}</small></td>
                         <td>
-                            <button class="btn-print" onclick='imprimerDocument(${JSON.stringify(d)})'>Imprimer</button>
+                            <button class="btn-warning" onclick="preparerModification(${d.id})">Modifier</button>
+                            <button class="btn-print" onclick='ouvrirPreview(${JSON.stringify(d)})'>Aperçu</button>
+                            <a href="${linkWhatsapp}" target="_blank" class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+                            <a href="${linkEmail}" class="btn-email"><i class="fa-solid fa-envelope"></i> Email</a>
                             <button class="btn-danger" onclick="supprimerDocument(${d.id})">Supprimer</button>
                         </td>
                     </tr>
                 `;
             });
 
+            if(!document.getElementById('document_id_edit').value) {
+                genererNumeroRef();
+            }
+        }
+
+        async function verifierEtGenererRef() {
             if(!document.getElementById('document_id_edit').value) {
                 genererNumeroRef();
             }
@@ -204,7 +226,7 @@
             div.className = 'form-grid ligne-item';
             div.style.marginBottom = '10px';
             div.innerHTML = `
-                <div><input type="text" class="ligne-desc" placeholder="Désignation (ex: Consommation eau, Électricité, Loyer...)" value="${designation}" required></div>
+                <div><input type="text" class="ligne-desc" placeholder="Désignation (Eau, Électricité, Loyer...)" value="${designation}" required></div>
                 <div><input type="number" step="0.01" class="ligne-montant" placeholder="Montant ($)" value="${montant}" required></div>
                 <div><button type="button" class="btn-danger" onclick="this.parentElement.parentElement.remove()" style="padding: 10px;">X</button></div>
             `;
@@ -215,7 +237,6 @@
             event.preventDefault();
             const id = document.getElementById('document_id_edit').value;
             
-            // Récupérer les lignes dynamiques
             const lignes = [];
             document.querySelectorAll('.ligne-item').forEach(item => {
                 const designation = item.querySelector('.ligne-desc').value;
@@ -226,7 +247,7 @@
             });
 
             if (lignes.length === 0) {
-                alert("Veuillez ajouter au moins une ligne de prestation.");
+                alert("Veuillez ajouter au moins une ligne.");
                 return;
             }
 
@@ -254,9 +275,38 @@
             chargerDonnees();
         }
 
+        function preparerModification(id) {
+            const d = documentsGlobal.find(x => x.id === id);
+            if (!d) return;
+
+            document.getElementById('document_id_edit').value = d.id;
+            document.getElementById('type').value = d.type;
+            document.getElementById('numero_ref').value = d.numero_ref || '';
+            document.getElementById('locataire_id').value = d.locataire_id || '';
+            document.getElementById('bien_id').value = d.bien_id || '';
+            document.getElementById('date_emission').value = d.date_emission ? d.date_emission.split('T')[0] : '';
+            document.getElementById('date_validite').value = d.date_validite ? d.date_validite.split('T')[0] : '';
+            document.getElementById('statut').value = d.statut;
+
+            document.getElementById('lignes-inputs').innerHTML = '';
+            if (d.lignes && d.lignes.length > 0) {
+                d.lignes.forEach(l => ajouterLigneInput(l.designation, l.montant));
+            } else {
+                ajouterLigneInput('Prestation', d.montant);
+            }
+
+            document.getElementById('form-title').innerText = "Modifier le document : " + d.numero_ref;
+            document.getElementById('btn-submit-doc').innerText = "Mettre à jour";
+            document.getElementById('btn-cancel-edit').style.display = 'inline-block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function resetFormulaire() {
             document.getElementById('document-form').reset();
             document.getElementById('document_id_edit').value = '';
+            document.getElementById('form-title').innerText = "Créer un nouveau document";
+            document.getElementById('btn-submit-doc').innerText = "Enregistrer le document";
+            document.getElementById('btn-cancel-edit').style.display = 'none';
             document.getElementById('lignes-inputs').innerHTML = '';
             ajouterLigneInput();
             genererNumeroRef();
@@ -269,21 +319,65 @@
             }
         }
 
-        function imprimerDocument(d) {
-            let lignesTableHtml = '';
+        function ouvrirPreview(d) {
+            docActuelApercu = d;
+            let lignesHtml = '';
             if (d.lignes && d.lignes.length > 0) {
                 d.lignes.forEach(l => {
+                    lignesHtml += `<tr><td style="border: 1px solid #cbd5e1; padding: 8px;">${l.designation}</td><td style="border: 1px solid #cbd5e1; padding: 8px;">${parseFloat(l.montant).toLocaleString()} $</td></tr>`;
+                });
+            }
+
+            const htmlContent = `
+                <div style="font-family: Arial, sans-serif; color: #333;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 10px; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="margin: 0; color: #0284c7;">ImmoGérer RDC</h3>
+                            <p style="margin: 2px 0; font-size: 13px;">Gestion Immobilière & Prestations</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <h2 style="margin: 0; color: #0284c7; text-transform: uppercase;">${d.type}</h2>
+                            <p style="margin: 2px 0; font-size: 13px;"><strong>N° Réf :</strong> ${d.numero_ref}</p>
+                            <p style="margin: 2px 0; font-size: 13px;"><strong>Date :</strong> ${d.date_emission ? d.date_emission.split('T')[0] : '-'}</p>
+                        </div>
+                    </div>
+                    <p><strong>Client :</strong> ${d.locataire_nom ? d.locataire_nom + ' ' + d.locataire_prenom : 'Client divers'}</p>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                        <thead>
+                            <tr style="background: #f1f5f9;"><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">Désignation</th><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">Montant ($)</th></tr>
+                        </thead>
+                        <tbody>
+                            ${lignesHtml}
+                        </tbody>
+                    </table>
+                    <h3 style="text-align: right; margin-top: 20px;">Total : ${parseFloat(d.montant).toLocaleString()} $</h3>
+                    <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #cbd5e1; padding-top: 10px;">
+                        ImmoGérer RDC - Kinshasa | Merci de votre confiance.
+                    </div>
+                </div>
+            `;
+            document.getElementById('preview-body').innerHTML = htmlContent;
+            document.getElementById('previewModal').style.display = 'flex';
+        }
+
+        function fermerPreview() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+
+        function imprimerDepuisPreview() {
+            if (!docActuelApercu) return;
+            let lignesTableHtml = '';
+            if (docActuelApercu.lignes && docActuelApercu.lignes.length > 0) {
+                docActuelApercu.lignes.forEach(l => {
                     lignesTableHtml += `<tr><td>${l.designation}</td><td>${parseFloat(l.montant).toLocaleString()} $</td></tr>`;
                 });
-            } else {
-                lignesTableHtml += `<tr><td>Prestation diverse (Réf: ${d.numero_ref})</td><td>${parseFloat(d.montant).toLocaleString()} $</td></tr>`;
             }
 
             const fenetreImpression = window.open('', '_blank');
             fenetreImpression.document.write(`
                 <html>
                 <head>
-                    <title>${d.type} - ${d.numero_ref}</title>
+                    <title>${docActuelApercu.type} - ${docActuelApercu.numero_ref}</title>
                     <style>
                         body { font-family: Arial, sans-serif; padding: 30px; color: #333; }
                         .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 15px; margin-bottom: 25px; }
@@ -304,22 +398,22 @@
                             <p>Gestion Immobilière & Prestations</p>
                         </div>
                         <div style="text-align: right;">
-                            <div class="doc-title">${d.type}</div>
-                            <p><strong>N° Réf :</strong> ${d.numero_ref}</p>
-                            <p><strong>Date :</strong> ${d.date_emission ? d.date_emission.split('T')[0] : '-'}</p>
-                            <p><strong>Validité :</strong> ${d.date_validite ? d.date_validite.split('T')[0] : 'N/A'}</p>
+                            <div class="doc-title">${docActuelApercu.type}</div>
+                            <p><strong>N° Réf :</strong> ${docActuelApercu.numero_ref}</p>
+                            <p><strong>Date :</strong> ${docActuelApercu.date_emission ? docActuelApercu.date_emission.split('T')[0] : '-'}</p>
+                            <p><strong>Validité :</strong> ${docActuelApercu.date_validite ? docActuelApercu.date_validite.split('T')[0] : 'N/A'}</p>
                         </div>
                     </div>
                     <table class="info-table">
-                        <tr><td><strong>Client / Locataire :</strong> ${d.locataire_nom ? d.locataire_nom + ' ' + d.locataire_prenom : 'Client divers'}</td></tr>
-                        <tr><td><strong>Référence Bien :</strong> ${d.nom_bien || 'N/A'}</td></tr>
+                        <tr><td><strong>Client / Locataire :</strong> ${docActuelApercu.locataire_nom ? docActuelApercu.locataire_nom + ' ' + docActuelApercu.locataire_prenom : 'Client divers'}</td></tr>
+                        <tr><td><strong>Référence Bien :</strong> ${docActuelApercu.nom_bien || 'N/A'}</td></tr>
                     </table>
                     <table class="content-table">
                         <tr><th>Désignation des prestations / articles</th><th>Montant ($)</th></tr>
                         ${lignesTableHtml}
                     </table>
                     <div class="total-section">
-                        Total Général : ${parseFloat(d.montant).toLocaleString()} $
+                        Total Général : ${parseFloat(docActuelApercu.montant).toLocaleString()} $
                     </div>
                     <div class="footer">
                         <p>ImmoGérer RDC - Siège Social : Kinshasa, RDC | RCCM : / | ID.NAT : /</p>
@@ -334,7 +428,6 @@
             fenetreImpression.document.close();
         }
 
-        // Initialisation de la première ligne au chargement
         resetFormulaire();
         chargerDonnees();
     </script>
