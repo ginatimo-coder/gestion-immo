@@ -16,7 +16,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Création automatique des tables et mise à jour des colonnes si nécessaire
+// Création automatique de toutes les tables, y compris l'inventaire
 pool.query(`
     CREATE TABLE IF NOT EXISTS locataires (
         id SERIAL PRIMARY KEY,
@@ -44,8 +44,6 @@ pool.query(`
         contrat_url TEXT
     );
 
-    ALTER TABLE baux ADD COLUMN IF NOT EXISTS contrat_url TEXT;
-
     CREATE TABLE IF NOT EXISTS paiements (
         id SERIAL PRIMARY KEY,
         locataire_id INT REFERENCES locataires(id) ON DELETE CASCADE,
@@ -55,6 +53,7 @@ pool.query(`
         statut VARCHAR(50) DEFAULT 'Payé'
     );
 
+    -- TABLE INVENTAIRE & STOCK (Vérifiée et intégrée)
     CREATE TABLE IF NOT EXISTS inventaire (
         id SERIAL PRIMARY KEY,
         designation VARCHAR(150) NOT NULL,
@@ -76,9 +75,6 @@ pool.query(`
         statut VARCHAR(30) DEFAULT 'Impayée'
     );
 
-    ALTER TABLE factures ADD COLUMN IF NOT EXISTS numero_ref VARCHAR(50);
-    ALTER TABLE factures ADD COLUMN IF NOT EXISTS date_validite DATE;
-
     CREATE TABLE IF NOT EXISTS facture_lignes (
         id SERIAL PRIMARY KEY,
         facture_id INT REFERENCES factures(id) ON DELETE CASCADE,
@@ -88,10 +84,6 @@ pool.query(`
         tva NUMERIC(5, 2) DEFAULT 16,
         montant NUMERIC(12, 2)
     );
-
-    ALTER TABLE facture_lignes ADD COLUMN IF NOT EXISTS qte INT DEFAULT 1;
-    ALTER TABLE facture_lignes ADD COLUMN IF NOT EXISTS prix NUMERIC(12, 2) DEFAULT 0;
-    ALTER TABLE facture_lignes ADD COLUMN IF NOT EXISTS tva NUMERIC(5, 2) DEFAULT 16;
 
     CREATE TABLE IF NOT EXISTS journal_comptable (
         id SERIAL PRIMARY KEY,
@@ -103,7 +95,6 @@ pool.query(`
         type_flux VARCHAR(50)
     );
 
-    -- TABLES RESSOURCES HUMAINES (RH) & PRESENCES --
     CREATE TABLE IF NOT EXISTS employes (
         id SERIAL PRIMARY KEY,
         nom VARCHAR(100) NOT NULL,
@@ -121,11 +112,6 @@ pool.query(`
         salaire_base NUMERIC(12, 2) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-
-    ALTER TABLE employes ADD COLUMN IF NOT EXISTS adresse TEXT;
-    ALTER TABLE employes ADD COLUMN IF NOT EXISTS lieu_naissance VARCHAR(100);
-    ALTER TABLE employes ADD COLUMN IF NOT EXISTS date_naissance DATE;
-    ALTER TABLE employes ADD COLUMN IF NOT EXISTS enfants_charges INTEGER DEFAULT 0;
 
     CREATE TABLE IF NOT EXISTS paie (
         id SERIAL PRIMARY KEY,
@@ -150,10 +136,7 @@ pool.query(`
 `).catch(err => console.error("Erreur tables:", err));
 
 // --- ROUTES D'AUTHENTIFICATION ---
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html'));
-});
-
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 app.post('/api/login', (req, res) => {
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
@@ -163,7 +146,6 @@ app.post('/api/login', (req, res) => {
         res.redirect('/login?erreur=1');
     }
 });
-
 app.get('/logout', (req, res) => {
     res.clearCookie('auth');
     res.redirect('/login');
@@ -185,31 +167,20 @@ app.get('/api/locataires', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM locataires ORDER BY id DESC');
         res.json(result.rows);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.post('/api/locataires', async (req, res) => {
     try {
         const { nom, prenom, email, telephone, date_naissance } = req.body;
-        await pool.query(
-            'INSERT INTO locataires (nom, prenom, email, telephone, date_naissance) VALUES ($1, $2, $3, $4, $5)',
-            [nom, prenom, email, telephone, date_naissance || null]
-        );
+        await pool.query('INSERT INTO locataires (nom, prenom, email, telephone, date_naissance) VALUES ($1, $2, $3, $4, $5)', [nom, prenom, email, telephone, date_naissance || null]);
         res.redirect('/locataires');
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.delete('/api/locataires/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM locataires WHERE id = $1', [req.params.id]);
         res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 // --- API BIENS ---
@@ -217,158 +188,91 @@ app.get('/api/biens', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM biens ORDER BY id DESC');
         res.json(result.rows);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.post('/api/biens', async (req, res) => {
     try {
         const { nom_bien, type, loyer, statut } = req.body;
-        await pool.query(
-            'INSERT INTO biens (nom_bien, type, loyer, statut) VALUES ($1, $2, $3, $4)',
-            [nom_bien, type, loyer, statut || 'Libre']
-        );
+        await pool.query('INSERT INTO biens (nom_bien, type, loyer, statut) VALUES ($1, $2, $3, $4)', [nom_bien, type, loyer, statut || 'Libre']);
         res.redirect('/biens');
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.delete('/api/biens/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM biens WHERE id = $1', [req.params.id]);
         res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 // --- API BAUX ---
 app.get('/api/baux', async (req, res) => {
     try {
-        const query = `
-            SELECT baux.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien 
-            FROM baux 
-            JOIN locataires ON baux.locataire_id = locataires.id 
-            JOIN biens ON baux.bien_id = biens.id 
-            ORDER BY baux.id DESC;
-        `;
+        const query = `SELECT baux.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM baux JOIN locataires ON baux.locataire_id = locataires.id JOIN biens ON baux.bien_id = biens.id ORDER BY baux.id DESC;`;
         const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.post('/api/baux', async (req, res) => {
     try {
         let { locataire_id, bien_id, date_debut, date_fin, contrat_url } = req.body;
-        if (!date_debut || date_debut.trim() === '') date_debut = null;
-        if (!date_fin || date_fin.trim() === '') date_fin = null;
-
-        await pool.query(
-            'INSERT INTO baux (locataire_id, bien_id, date_debut, date_fin, contrat_url) VALUES ($1, $2, $3, $4, $5)',
-            [locataire_id, bien_id, date_debut, date_fin, contrat_url || null]
-        );
+        await pool.query('INSERT INTO baux (locataire_id, bien_id, date_debut, date_fin, contrat_url) VALUES ($1, $2, $3, $4, $5)', [locataire_id, bien_id, date_debut || null, date_fin || null, contrat_url || null]);
         await pool.query("UPDATE biens SET statut = 'Loué' WHERE id = $1", [bien_id]);
         res.redirect('/baux');
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.delete('/api/baux/:id', async (req, res) => {
     try {
         const bail = await pool.query('SELECT bien_id FROM baux WHERE id = $1', [req.params.id]);
-        if (bail.rows.length > 0) {
-            await pool.query("UPDATE biens SET statut = 'Libre' WHERE id = $1", [bail.rows[0].bien_id]);
-        }
+        if (bail.rows.length > 0) await pool.query("UPDATE biens SET statut = 'Libre' WHERE id = $1", [bail.rows[0].bien_id]);
         await pool.query('DELETE FROM baux WHERE id = $1', [req.params.id]);
         res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 // --- API PAIEMENTS ---
 app.get('/api/paiements', async (req, res) => {
     try {
-        const query = `
-            SELECT paiements.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien 
-            FROM paiements 
-            JOIN locataires ON paiements.locataire_id = locataires.id 
-            JOIN biens ON paiements.bien_id = biens.id 
-            ORDER BY paiements.id DESC;
-        `;
+        const query = `SELECT paiements.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM paiements JOIN locataires ON paiements.locataire_id = locataires.id JOIN biens ON paiements.bien_id = biens.id ORDER BY paiements.id DESC;`;
         const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.post('/api/paiements', async (req, res) => {
     try {
         let { locataire_id, bien_id, date_paiement, montant, statut } = req.body;
-        if (!date_paiement || date_paiement.trim() === '') date_paiement = null;
-
-        await pool.query(
-            'INSERT INTO paiements (locataire_id, bien_id, date_paiement, montant, statut) VALUES ($1, $2, $3, $4, $5)',
-            [locataire_id, bien_id, date_paiement, montant, statut || 'Payé']
-        );
+        await pool.query('INSERT INTO paiements (locataire_id, bien_id, date_paiement, montant, statut) VALUES ($1, $2, $3, $4, $5)', [locataire_id, bien_id, date_paiement || null, montant, statut || 'Payé']);
         if ((statut || 'Payé') === 'Payé') {
-            await pool.query(
-                `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
-                 VALUES ($1, $2, '531 - Caisse', '706 - Location de biens', $3, 'Encaissement')`,
-                [date_paiement, `Encaissement loyer - Locataire ID ${locataire_id}`, montant]
-            );
+            await pool.query(`INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) VALUES ($1, $2, '531 - Caisse', '706 - Location de biens', $3, 'Encaissement')`, [date_paiement || null, `Encaissement loyer - Locataire ID ${locataire_id}`, montant]);
         }
         res.redirect('/paiements');
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.delete('/api/paiements/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM paiements WHERE id = $1', [req.params.id]);
         res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API INVENTAIRE ---
+// --- API INVENTAIRE & STOCK ---
 app.get('/api/inventaire', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM inventaire ORDER BY id DESC');
         res.json(result.rows);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.post('/api/inventaire', async (req, res) => {
     try {
         const { designation, reference, quantite_stock, prix_unitaire, description } = req.body;
-        await pool.query(
-            'INSERT INTO inventaire (designation, reference, quantite_stock, prix_unitaire, description) VALUES ($1, $2, $3, $4, $5)',
-            [designation, reference, quantite_stock || 0, prix_unitaire || 0, description]
-        );
+        await pool.query('INSERT INTO inventaire (designation, reference, quantite_stock, prix_unitaire, description) VALUES ($1, $2, $3, $4, $5)', [designation, reference, quantite_stock || 0, prix_unitaire || 0, description]);
         res.redirect('/inventaire');
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.delete('/api/inventaire/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM inventaire WHERE id = $1', [req.params.id]);
         res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 // --- API FACTURES, PROFORMAS & BL ---
@@ -377,38 +281,23 @@ app.get('/api/factures/prochain-numero/:type', async (req, res) => {
         const typeDoc = req.params.type;
         const prefix = typeDoc === 'Facture' ? 'FAC' : typeDoc === 'Proforma' ? 'PRO' : 'BL';
         const annee = new Date().getFullYear();
-        
         const result = await pool.query('SELECT COUNT(*) as total FROM factures WHERE type = $1', [typeDoc]);
         const nextNum = parseInt(result.rows[0].total) + 1;
-        const numeroRef = `${prefix}-${annee}-${String(nextNum).padStart(3, '0')}`;
-        
-        res.json({ numero_ref: numeroRef });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+        res.json({ numero_ref: `${prefix}-${annee}-${String(nextNum).padStart(3, '0')}` });
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 app.get('/api/factures', async (req, res) => {
     try {
-        const query = `
-            SELECT factures.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien 
-            FROM factures 
-            LEFT JOIN locataires ON factures.locataire_id = locataires.id 
-            LEFT JOIN biens ON factures.bien_id = biens.id 
-            ORDER BY factures.id DESC;
-        `;
+        const query = `SELECT factures.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM factures LEFT JOIN locataires ON factures.locataire_id = locataires.id LEFT JOIN biens ON factures.bien_id = biens.id ORDER BY factures.id DESC;`;
         const result = await pool.query(query);
         let factures = result.rows;
-
         for (let f of factures) {
             const lignesRes = await pool.query('SELECT * FROM facture_lignes WHERE facture_id = $1', [f.id]);
             f.lignes = lignesRes.rows;
         }
-
         res.json(factures);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 app.post('/api/factures', async (req, res) => {
@@ -416,38 +305,25 @@ app.post('/api/factures', async (req, res) => {
     try {
         await client.query('BEGIN');
         let { numero_ref, type, locataire_id, bien_id, date_emission, date_validite, statut, lignes } = req.body;
-        
         let montantTotal = 0;
-        if (lignes && Array.isArray(lignes)) {
-            lignes.forEach(l => montantTotal += parseFloat(l.montant) || 0);
-        }
+        if (lignes && Array.isArray(lignes)) lignes.forEach(l => montantTotal += parseFloat(l.montant) || 0);
 
-        const facResult = await client.query(
-            'INSERT INTO factures (numero_ref, type, locataire_id, bien_id, montant, date_emission, date_validite, statut) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
-            [numero_ref, type, locataire_id || null, bien_id || null, montantTotal, date_emission || null, date_validite || null, statut || 'Impayée']
-        );
-        
+        const facResult = await client.query('INSERT INTO factures (numero_ref, type, locataire_id, bien_id, montant, date_emission, date_validite, statut) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id', [numero_ref, type, locataire_id || null, bien_id || null, montantTotal, date_emission || null, date_validite || null, statut || 'Impayée']);
         const factureId = facResult.rows[0].id;
 
         if (lignes && Array.isArray(lignes)) {
             for (let l of lignes) {
                 if (l.designation) {
-                    await client.query(
-                        'INSERT INTO facture_lignes (facture_id, designation, qte, prix, tva, montant) VALUES ($1, $2, $3, $4, $5, $6)',
-                        [factureId, l.designation, l.qte || 1, l.prix || 0, l.tva || 16, l.montant || 0]
-                    );
+                    await client.query('INSERT INTO facture_lignes (facture_id, designation, qte, prix, tva, montant) VALUES ($1, $2, $3, $4, $5, $6)', [factureId, l.designation, l.qte || 1, l.prix || 0, l.tva || 16, l.montant || 0]);
                 }
             }
         }
-
         await client.query('COMMIT');
         res.sendStatus(200);
     } catch (err) {
         await client.query('ROLLBACK');
         res.status(500).send(err.message);
-    } finally {
-        client.release();
-    }
+    } finally { client.release(); }
 });
 
 app.put('/api/factures/:id', async (req, res) => {
@@ -456,171 +332,76 @@ app.put('/api/factures/:id', async (req, res) => {
         await client.query('BEGIN');
         let { numero_ref, type, locataire_id, bien_id, date_emission, date_validite, statut, lignes } = req.body;
         const factureId = req.params.id;
-
         let montantTotal = 0;
-        if (lignes && Array.isArray(lignes)) {
-            lignes.forEach(l => montantTotal += parseFloat(l.montant) || 0);
-        }
+        if (lignes && Array.isArray(lignes)) lignes.forEach(l => montantTotal += parseFloat(l.montant) || 0);
 
-        await client.query(
-            `UPDATE factures SET numero_ref = $1, type = $2, locataire_id = $3, bien_id = $4, montant = $5, date_emission = $6, date_validite = $7, statut = $8 WHERE id = $9`,
-            [numero_ref, type, locataire_id || null, bien_id || null, montantTotal, date_emission || null, date_validite || null, statut, factureId]
-        );
-
+        await client.query(`UPDATE factures SET numero_ref = $1, type = $2, locataire_id = $3, bien_id = $4, montant = $5, date_emission = $6, date_validite = $7, statut = $8 WHERE id = $9`, [numero_ref, type, locataire_id || null, bien_id || null, montantTotal, date_emission || null, date_validite || null, statut, factureId]);
         await client.query('DELETE FROM facture_lignes WHERE facture_id = $1', [factureId]);
 
         if (lignes && Array.isArray(lignes)) {
             for (let l of lignes) {
                 if (l.designation) {
-                    await client.query(
-                        'INSERT INTO facture_lignes (facture_id, designation, qte, prix, tva, montant) VALUES ($1, $2, $3, $4, $5, $6)',
-                        [factureId, l.designation, l.qte || 1, l.prix || 0, l.tva || 16, l.montant || 0]
-                    );
+                    await client.query('INSERT INTO facture_lignes (facture_id, designation, qte, prix, tva, montant) VALUES ($1, $2, $3, $4, $5, $6)', [factureId, l.designation, l.qte || 1, l.prix || 0, l.tva || 16, l.montant || 0]);
                 }
             }
         }
-
         await client.query('COMMIT');
         res.sendStatus(200);
     } catch (err) {
         await client.query('ROLLBACK');
         res.status(500).send(err.message);
-    } finally {
-        client.release();
-    }
+    } finally { client.release(); }
 });
 
 app.delete('/api/factures/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM factures WHERE id = $1', [req.params.id]);
         res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API RESSOURCES HUMAINES (RH) & PRESENCES ---
+// --- API RESSOURCES HUMAINES & PRESENCES ---
 app.get('/api/employes', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM employes ORDER BY id DESC');
         res.json(result.rows);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.post('/api/employes', async (req, res) => {
     try {
         const { nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance, enfants_charges, poste, departement, date_embauche, type_contrat, salaire_base } = req.body;
-        await pool.query(
-            `INSERT INTO employes (nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance, enfants_charges, poste, departement, date_embauche, type_contrat, salaire_base) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-            [nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance || null, enfants_charges || 0, poste, departement, date_embauche || null, type_contrat, salaire_base || 0]
-        );
+        await pool.query(`INSERT INTO employes (nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance, enfants_charges, poste, departement, date_embauche, type_contrat, salaire_base) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`, [nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance || null, enfants_charges || 0, poste, departement, date_embauche || null, type_contrat, salaire_base || 0]);
         res.redirect('/rh');
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
-app.put('/api/employes/:id', async (req, res) => {
-    try {
-        const { nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance, enfants_charges, poste, departement, type_contrat, salaire_base } = req.body;
-        await pool.query(
-            `UPDATE employes SET nom = $1, prenom = $2, email = $3, telephone = $4, adresse = $5, lieu_naissance = $6, date_naissance = $7, enfants_charges = $8, poste = $9, departement = $10, type_contrat = $11, salaire_base = $12 WHERE id = $13`,
-            [nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance || null, enfants_charges || 0, poste, departement, type_contrat, salaire_base, req.params.id]
-        );
-        res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
 app.delete('/api/employes/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM employes WHERE id = $1', [req.params.id]);
         res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-app.get('/api/paie', async (req, res) => {
-    try {
-        const query = `
-            SELECT paie.*, employes.nom, employes.prenom, employes.poste 
-            FROM paie 
-            JOIN employes ON paie.employe_id = employes.id 
-            ORDER BY paie.id DESC;
-        `;
-        const result = await pool.query(query);
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-app.post('/api/paie', async (req, res) => {
-    try {
-        const { employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net } = req.body;
-        await pool.query(
-            `INSERT INTO paie (employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [employe_id, mois, annee, primes || 0, heures_sup || 0, charges_sociales || 0, salaire_net]
-        );
-        await pool.query(
-            `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
-             VALUES (CURRENT_DATE, $1, '641 - Rémunérations du personnel', '531 - Caisse', $2, 'Décaissement')`,
-            [`Paie - Employé ID ${employe_id} (${mois} ${annee})`, salaire_net]
-        );
-        res.redirect('/rh');
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 app.get('/api/presences', async (req, res) => {
     try {
-        const query = `
-            SELECT presences.*, employes.nom, employes.prenom, employes.poste 
-            FROM presences 
-            JOIN employes ON presences.employe_id = employes.id 
-            ORDER BY presences.date_pointage DESC, presences.id DESC;
-        `;
+        const query = `SELECT presences.*, employes.nom, employes.prenom, employes.poste FROM presences JOIN employes ON presences.employe_id = employes.id ORDER BY presences.date_pointage DESC, presences.id DESC;`;
         const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.post('/api/presences/sync', async (req, res) => {
     try {
         const pointages = req.body;
         if (!Array.isArray(pointages)) return res.status(400).send("Format invalide.");
-
         for (let p of pointages) {
-            const check = await pool.query(
-                'SELECT id FROM presences WHERE employe_id = $1 AND date_pointage = $2',
-                [p.employe_id, p.date_pointage]
-            );
-
+            const check = await pool.query('SELECT id FROM presences WHERE employe_id = $1 AND date_pointage = $2', [p.employe_id, p.date_pointage]);
             if (check.rows.length > 0) {
-                await pool.query(
-                    'UPDATE presences SET heure_depart = $1 WHERE employe_id = $2 AND date_pointage = $3',
-                    [p.heure_depart || null, p.employe_id, p.date_pointage]
-                );
+                await pool.query('UPDATE presences SET heure_depart = $1 WHERE employe_id = $2 AND date_pointage = $3', [p.heure_depart || null, p.employe_id, p.date_pointage]);
             } else {
-                await pool.query(
-                    'INSERT INTO presences (employe_id, date_pointage, heure_arrivee, heure_depart, statut) VALUES ($1, $2, $3, $4, $5)',
-                    [p.employe_id, p.date_pointage, p.heure_arrivee || null, p.heure_depart || null, p.statut || 'Présent']
-                );
+                await pool.query('INSERT INTO presences (employe_id, date_pointage, heure_arrivee, heure_depart, statut) VALUES ($1, $2, $3, $4, $5)', [p.employe_id, p.date_pointage, p.heure_arrivee || null, p.heure_depart || null, p.statut || 'Présent']);
             }
         }
         res.status(200).send({ message: "Synchronisation réussie !" });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 // --- API COMPTABILITÉ ---
@@ -628,53 +409,14 @@ app.get('/api/comptabilite/journal', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM journal_comptable ORDER BY date_operation DESC, id DESC');
         res.json(result.rows);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
-
 app.post('/api/comptabilite/ecriture', async (req, res) => {
     try {
         let { date_operation, libelle, compte_debit, compte_credit, montant, type_flux } = req.body;
-        if (!date_operation || date_operation.trim() === '') date_operation = null;
-
-        await pool.query(
-            `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [date_operation, libelle, compte_debit, compte_credit, montant, type_flux]
-        );
+        await pool.query(`INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) VALUES ($1, $2, $3, $4, $5, $6)`, [date_operation || null, libelle, compte_debit, compte_credit, montant, type_flux]);
         res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-app.get('/api/comptabilite/synthese', async (req, res) => {
-    try {
-        const ecritures = await pool.query('SELECT * FROM journal_comptable');
-        let totalProduits = 0;
-        let totalCharges = 0;
-        let comptesMap = {};
-
-        ecritures.rows.forEach(e => {
-            const m = parseFloat(e.montant);
-            if(!comptesMap[e.compte_debit]) comptesMap[e.compte_debit] = { debit: 0, credit: 0 };
-            comptesMap[e.compte_debit].debit += m;
-            if(!comptesMap[e.compte_credit]) comptesMap[e.compte_credit] = { debit: 0, credit: 0 };
-            comptesMap[e.compte_credit].credit += m;
-            if(e.compte_credit.startsWith('7')) totalProduits += m;
-            if(e.compte_debit.startsWith('6')) totalCharges += m;
-        });
-
-        res.json({
-            comptes: comptesMap,
-            totalProduits,
-            totalCharges,
-            resultatNet: totalProduits - totalCharges
-        });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 app.listen(port, () => {
