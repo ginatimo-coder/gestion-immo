@@ -57,13 +57,19 @@ pool.query(`
 
     CREATE TABLE IF NOT EXISTS factures (
         id SERIAL PRIMARY KEY,
-        type VARCHAR(20),
+        numero_ref VARCHAR(50),
+        type VARCHAR(30), -- 'Facture', 'Proforma', 'Bon de Livraison'
         locataire_id INT REFERENCES locataires(id) ON DELETE CASCADE,
         bien_id INT REFERENCES biens(id) ON DELETE CASCADE,
-        montant NUMERIC,
+        montant NUMERIC(12, 2),
         date_emission DATE,
+        date_validite DATE,
         statut VARCHAR(30) DEFAULT 'Impayée'
     );
+
+    -- Mise à jour automatique des colonnes si la table existait déjà --
+    ALTER TABLE factures ADD COLUMN IF NOT EXISTS numero_ref VARCHAR(50);
+    ALTER TABLE factures ADD COLUMN IF NOT EXISTS date_validite DATE;
 
     CREATE TABLE IF NOT EXISTS journal_comptable (
         id SERIAL PRIMARY KEY,
@@ -94,7 +100,6 @@ pool.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Sécurité additionnelle pour s'assurer que les colonnes existent sur Render --
     ALTER TABLE employes ADD COLUMN IF NOT EXISTS adresse TEXT;
     ALTER TABLE employes ADD COLUMN IF NOT EXISTS lieu_naissance VARCHAR(100);
     ALTER TABLE employes ADD COLUMN IF NOT EXISTS date_naissance DATE;
@@ -110,15 +115,6 @@ pool.query(`
         charges_sociales NUMERIC(12, 2) DEFAULT 0,
         salaire_net NUMERIC(12, 2) DEFAULT 0,
         date_paiement DATE DEFAULT CURRENT_DATE
-    );
-
-    CREATE TABLE IF NOT EXISTS conges (
-        id SERIAL PRIMARY KEY,
-        employe_id INTEGER REFERENCES employes(id) ON DELETE CASCADE,
-        type_conge VARCHAR(50),
-        date_debut DATE,
-        date_fin DATE,
-        statut VARCHAR(30) DEFAULT 'En attente'
     );
 `).catch(err => console.error("Erreur tables:", err));
 
@@ -243,13 +239,10 @@ app.post('/api/baux', async (req, res) => {
             'INSERT INTO baux (locataire_id, bien_id, date_debut, date_fin, contrat_url) VALUES ($1, $2, $3, $4, $5)',
             [locataire_id, bien_id, date_debut, date_fin, contrat_url || null]
         );
-        
         await pool.query("UPDATE biens SET statut = 'Loué' WHERE id = $1", [bien_id]);
-        
         res.redirect('/baux');
     } catch (err) {
-        console.error("ERREUR SQL (Baux):", err.message);
-        res.status(500).send(`<h2 style="color:red;">Erreur Interne du Serveur :</h2><pre>${err.message}</pre>`);
+        res.status(500).send(err.message);
     }
 });
 
@@ -305,15 +298,6 @@ app.post('/api/paiements', async (req, res) => {
     }
 });
 
-app.put('/api/paiements/:id', async (req, res) => {
-    try {
-        await pool.query('UPDATE paiements SET montant = $1 WHERE id = $2', [req.body.montant, req.params.id]);
-        res.sendStatus(200);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
 app.delete('/api/paiements/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM paiements WHERE id = $1', [req.params.id]);
@@ -323,14 +307,14 @@ app.delete('/api/paiements/:id', async (req, res) => {
     }
 });
 
-// --- API FACTURES & PROFORMAS ---
+// --- API FACTURES, PROFORMAS & BL ---
 app.get('/api/factures', async (req, res) => {
     try {
         const query = `
             SELECT factures.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien 
             FROM factures 
-            JOIN locataires ON factures.locataire_id = locataires.id 
-            JOIN biens ON factures.bien_id = biens.id 
+            LEFT JOIN locataires ON factures.locataire_id = locataires.id 
+            LEFT JOIN biens ON factures.bien_id = biens.id 
             ORDER BY factures.id DESC;
         `;
         const result = await pool.query(query);
@@ -342,14 +326,25 @@ app.get('/api/factures', async (req, res) => {
 
 app.post('/api/factures', async (req, res) => {
     try {
-        let { type, locataire_id, bien_id, montant, date_emission, statut } = req.body;
-        if (!date_emission || date_emission.trim() === '') date_emission = null;
-
+        let { numero_ref, type, locataire_id, bien_id, montant, date_emission, date_validite, statut } = req.body;
         await pool.query(
-            'INSERT INTO factures (type, locataire_id, bien_id, montant, date_emission, statut) VALUES ($1, $2, $3, $4, $5, $6)',
-            [type, locataire_id, bien_id, montant, date_emission, statut || 'Impayée']
+            'INSERT INTO factures (numero_ref, type, locataire_id, bien_id, montant, date_emission, date_validite, statut) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [numero_ref, type, locataire_id || null, bien_id || null, montant, date_emission || null, date_validite || null, statut || 'Impayée']
         );
         res.redirect('/factures');
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.put('/api/factures/:id', async (req, res) => {
+    try {
+        let { numero_ref, type, locataire_id, bien_id, montant, date_emission, date_validite, statut } = req.body;
+        await pool.query(
+            `UPDATE factures SET numero_ref = $1, type = $2, locataire_id = $3, bien_id = $4, montant = $5, date_emission = $6, date_validite = $7, statut = $8 WHERE id = $9`,
+            [numero_ref, type, locataire_id || null, bien_id || null, montant, date_emission || null, date_validite || null, statut, req.params.id]
+        );
+        res.sendStatus(200);
     } catch (err) {
         res.status(500).send(err.message);
     }
@@ -397,7 +392,6 @@ app.put('/api/employes/:id', async (req, res) => {
         );
         res.sendStatus(200);
     } catch (err) {
-        console.error("ERREUR PUT EMPLOYE:", err.message);
         res.status(500).send(err.message);
     }
 });
@@ -429,20 +423,16 @@ app.get('/api/paie', async (req, res) => {
 app.post('/api/paie', async (req, res) => {
     try {
         const { employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net } = req.body;
-        
         await pool.query(
             `INSERT INTO paie (employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net) 
              VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [employe_id, mois, annee, primes || 0, heures_sup || 0, charges_sociales || 0, salaire_net]
         );
-
-        // Écriture automatique en comptabilité générale
         await pool.query(
             `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
              VALUES (CURRENT_DATE, $1, '641 - Rémunérations du personnel', '531 - Caisse', $2, 'Décaissement')`,
             [`Paie - Employé ID ${employe_id} (${mois} ${annee})`, salaire_net]
         );
-
         res.redirect('/rh');
     } catch (err) {
         res.status(500).send(err.message);
