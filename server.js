@@ -58,7 +58,7 @@ pool.query(`
     CREATE TABLE IF NOT EXISTS factures (
         id SERIAL PRIMARY KEY,
         numero_ref VARCHAR(50),
-        type VARCHAR(30), -- 'Facture', 'Proforma', 'Bon de Livraison'
+        type VARCHAR(30),
         locataire_id INT REFERENCES locataires(id) ON DELETE CASCADE,
         bien_id INT REFERENCES biens(id) ON DELETE CASCADE,
         montant NUMERIC(12, 2),
@@ -67,9 +67,15 @@ pool.query(`
         statut VARCHAR(30) DEFAULT 'Impayée'
     );
 
-    -- Mise à jour automatique des colonnes si la table existait déjà --
     ALTER TABLE factures ADD COLUMN IF NOT EXISTS numero_ref VARCHAR(50);
     ALTER TABLE factures ADD COLUMN IF NOT EXISTS date_validite DATE;
+
+    CREATE TABLE IF NOT EXISTS facture_lignes (
+        id SERIAL PRIMARY KEY,
+        facture_id INT REFERENCES factures(id) ON DELETE CASCADE,
+        designation TEXT,
+        montant NUMERIC(12, 2)
+    );
 
     CREATE TABLE IF NOT EXISTS journal_comptable (
         id SERIAL PRIMARY KEY,
@@ -308,6 +314,22 @@ app.delete('/api/paiements/:id', async (req, res) => {
 });
 
 // --- API FACTURES, PROFORMAS & BL ---
+app.get('/api/factures/prochain-numero/:type', async (req, res) => {
+    try {
+        const typeDoc = req.params.type;
+        const prefix = typeDoc === 'Facture' ? 'FAC' : typeDoc === 'Proforma' ? 'PRO' : 'BL';
+        const annee = new Date().getFullYear();
+        
+        const result = await pool.query('SELECT COUNT(*) as total FROM factures WHERE type = $1', [typeDoc]);
+        const nextNum = parseInt(result.rows[0].total) + 1;
+        const numeroRef = `${prefix}-${annee}-${String(nextNum).padStart(3, '0')}`;
+        
+        res.json({ numero_ref: numeroRef });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
 app.get('/api/factures', async (req, res) => {
     try {
         const query = `
@@ -318,35 +340,55 @@ app.get('/api/factures', async (req, res) => {
             ORDER BY factures.id DESC;
         `;
         const result = await pool.query(query);
-        res.json(result.rows);
+        let factures = result.rows;
+
+        for (let f of factures) {
+            const lignesRes = await pool.query('SELECT * FROM facture_lignes WHERE facture_id = $1', [f.id]);
+            f.lignes = lignesRes.rows;
+        }
+
+        res.json(factures);
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
 app.post('/api/factures', async (req, res) => {
+    const client = await pool.connect();
     try {
-        let { numero_ref, type, locataire_id, bien_id, montant, date_emission, date_validite, statut } = req.body;
-        await pool.query(
-            'INSERT INTO factures (numero_ref, type, locataire_id, bien_id, montant, date_emission, date_validite, statut) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-            [numero_ref, type, locataire_id || null, bien_id || null, montant, date_emission || null, date_validite || null, statut || 'Impayée']
-        );
-        res.redirect('/factures');
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
+        await client.query('BEGIN');
+        let { numero_ref, type, locataire_id, bien_id, date_emission, date_validite, statut, lignes } = req.body;
+        
+        let montantTotal = 0;
+        if (lignes && Array.isArray(lignes)) {
+            lignes.forEach(l => montantTotal += parseFloat(l.montant) || 0);
+        }
 
-app.put('/api/factures/:id', async (req, res) => {
-    try {
-        let { numero_ref, type, locataire_id, bien_id, montant, date_emission, date_validite, statut } = req.body;
-        await pool.query(
-            `UPDATE factures SET numero_ref = $1, type = $2, locataire_id = $3, bien_id = $4, montant = $5, date_emission = $6, date_validite = $7, statut = $8 WHERE id = $9`,
-            [numero_ref, type, locataire_id || null, bien_id || null, montant, date_emission || null, date_validite || null, statut, req.params.id]
+        const facResult = await client.query(
+            'INSERT INTO factures (numero_ref, type, locataire_id, bien_id, montant, date_emission, date_validite, statut) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+            [numero_ref, type, locataire_id || null, bien_id || null, montantTotal, date_emission || null, date_validite || null, statut || 'Impayée']
         );
+        
+        const factureId = facResult.rows[0].id;
+
+        if (lignes && Array.isArray(lignes)) {
+            for (let l of lignes) {
+                if (l.designation && l.montant) {
+                    await client.query(
+                        'INSERT INTO facture_lignes (facture_id, designation, montant) VALUES ($1, $2, $3)',
+                        [factureId, l.designation, l.montant]
+                    );
+                }
+            }
+        }
+
+        await client.query('COMMIT');
         res.sendStatus(200);
     } catch (err) {
+        await client.query('ROLLBACK');
         res.status(500).send(err.message);
+    } finally {
+        client.release();
     }
 });
 
