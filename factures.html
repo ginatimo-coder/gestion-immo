@@ -19,31 +19,26 @@
         th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
         th { background-color: #f9fafb; color: #374151; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        .ligne-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 10px; align-items: center; margin-bottom: 10px; }
         label { display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px; }
         input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
         button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         button:hover { background: #0369a1; }
-        .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 12px; }
-        .btn-warning { background: #d97706; padding: 6px 12px; font-size: 12px; color: white; }
-        .btn-print { background: #4f46e5; padding: 6px 12px; font-size: 12px; color: white; }
+        .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; }
+        .btn-warning { background: #d97706; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; }
+        .btn-print { background: #4f46e5; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; }
         .btn-whatsapp { background: #25d366; padding: 6px 12px; font-size: 12px; color: white; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold; }
         .btn-email { background: #ea580c; padding: 6px 12px; font-size: 12px; color: white; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold; }
         .btn-bl { background: #0d9488; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; font-weight: bold; }
         .lignes-container { background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
         .total-global-box { font-size: 18px; font-weight: bold; text-align: right; margin-top: 15px; color: #0369a1; }
-        
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 30px; border-radius: 8px; width: 750px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .close-modal { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #6b7280; }
     </style>
 </head>
 <body>
-
     <aside>
-        <div class="logo-area">
-            <i class="fa-solid fa-building-shield"></i> ImmoGérer
-        </div>
+        <div class="logo-area"><i class="fa-solid fa-building-shield"></i> ImmoGérer</div>
         <ul>
             <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
             <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
@@ -60,7 +55,6 @@
 
     <main>
         <h2>Gestion des Factures, Proformas & Bons de Livraison (BL)</h2>
-
         <div class="card">
             <h3 id="form-title">Créer un nouveau document</h3>
             <form id="document-form" onsubmit="enregistrerDocument(event)">
@@ -74,49 +68,27 @@
                             <option value="Bon de Livraison">Bon de Livraison (BL)</option>
                         </select>
                     </div>
-                    <div>
-                        <label>Numéro de Référence :</label>
-                        <input type="text" id="numero_ref" required>
-                    </div>
+                    <div><label>Numéro de Référence :</label><input type="text" id="numero_ref" required></div>
                     <div>
                         <label>Client / Locataire :</label>
-                        <select id="locataire_id">
-                            <option value="">-- Aucun / Divers --</option>
-                        </select>
+                        <select id="locataire_id"><option value="">-- Aucun / Divers --</option></select>
                     </div>
                     <div>
                         <label>Bien Immobilier :</label>
-                        <select id="bien_id">
-                            <option value="">-- Aucun / Divers --</option>
-                        </select>
+                        <select id="bien_id"><option value="">-- Aucun / Divers --</option></select>
                     </div>
-                    <div>
-                        <label>Date d'émission :</label>
-                        <input type="date" id="date_emission">
-                    </div>
-                    <div>
-                        <label>Date de validité :</label>
-                        <input type="date" id="date_validite">
-                    </div>
+                    <div><label>Date d'émission :</label><input type="date" id="date_emission"></div>
+                    <div><label>Date de validité :</label><input type="date" id="date_validite"></div>
                     <div>
                         <label>Statut :</label>
-                        <select id="statut">
-                            <option value="Impayée">Impayée</option>
-                            <option value="Payée">Payée</option>
-                            <option value="Validée">Validée</option>
-                        </select>
+                        <select id="statut"><option value="Impayée">Impayée</option><option value="Payée">Payée</option><option value="Validée">Validée</option></select>
                     </div>
                 </div>
 
                 <div class="lignes-container">
-                    <h4 id="titre-lignes">Lignes du document (Qté, Prix, TVA)</h4>
+                    <h4 id="titre-lignes">Lignes du document</h4>
                     <div id="entete-lignes" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 10px; font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #4b5563;">
-                        <div>Désignation</div>
-                        <div>Qté</div>
-                        <div>Prix Unit. ($)</div>
-                        <div>TVA</div>
-                        <div>Total Ligne ($)</div>
-                        <div></div>
+                        <div>Désignation</div><div>Qté</div><div>Prix Unit. ($)</div><div>TVA</div><div>Total Ligne ($)</div><div></div>
                     </div>
                     <div id="lignes-inputs"></div>
                     <button type="button" onclick="ajouterLigneInput()" style="background: #059669; margin-top: 10px; padding: 6px 12px; font-size: 13px;">+ Ajouter une ligne</button>
@@ -135,20 +107,13 @@
             <h3>Historique des Documents Émis</h3>
             <table>
                 <thead>
-                    <tr>
-                        <th>Réf / Type</th>
-                        <th>Client / Bien</th>
-                        <th>Montant Total</th>
-                        <th>Dates</th>
-                        <th>Actions</th>
-                    </tr>
+                    <tr><th>Réf / Type</th><th>Client / Bien</th><th>Montant Total</th><th>Dates</th><th>Actions</th></tr>
                 </thead>
                 <tbody id="liste-factures"></tbody>
             </table>
         </div>
     </main>
 
-    <!-- Modal d'Aperçu -->
     <div id="previewModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="fermerPreview()">&times;</span>
@@ -161,26 +126,20 @@
     </div>
 
     <script>
-        let documentsGlobal = [];
-        let locatairesGlobal = [];
-        let docActuelApercu = null;
+        let documentsGlobal = [], locatairesGlobal = [], docActuelApercu = null;
 
         async function chargerDonnees() {
             const resLoc = await fetch('/api/locataires');
             locatairesGlobal = await resLoc.json();
             const selectLoc = document.getElementById('locataire_id');
             selectLoc.innerHTML = '<option value="">-- Aucun / Divers --</option>';
-            locatairesGlobal.forEach(l => {
-                selectLoc.innerHTML += `<option value="${l.id}">${capitaliserTexte(l.nom)} ${capitaliserTexte(l.prenom)}</option>`;
-            });
+            locatairesGlobal.forEach(l => selectLoc.innerHTML += `<option value="${l.id}">${capitaliserTexte(l.nom)} ${capitaliserTexte(l.prenom)}</option>`);
 
             const resBiens = await fetch('/api/biens');
             const biens = await resBiens.json();
             const selectBien = document.getElementById('bien_id');
             selectBien.innerHTML = '<option value="">-- Aucun / Divers --</option>';
-            biens.forEach(b => {
-                selectBien.innerHTML += `<option value="${b.id}">${capitaliserTexte(b.nom_bien)}</option>`;
-            });
+            biens.forEach(b => selectBien.innerHTML += `<option value="${b.id}">${capitaliserTexte(b.nom_bien)}</option>`);
 
             const resFac = await fetch('/api/factures');
             documentsGlobal = await resFac.json();
@@ -191,10 +150,9 @@
                 const clientObj = locatairesGlobal.find(l => l.id === d.locataire_id);
                 const telClient = clientObj && clientObj.telephone ? clientObj.telephone : '';
                 const emailClient = clientObj && clientObj.email ? clientObj.email : '';
-                
-                const msgWhatsapp = encodeURIComponent(`Bonjour, veuillez trouver ci-joint votre document PDF (${d.type} Réf: ${d.numero_ref}) d'un montant total de ${parseFloat(d.montant).toLocaleString()} $. Merci.`);
+                const msgWhatsapp = encodeURIComponent(`Bonjour, veuillez trouver ci-joint votre document (${d.type} Réf: ${d.numero_ref}) d'un montant de ${parseFloat(d.montant).toLocaleString()} $. Merci.`);
                 const linkWhatsapp = telClient ? `https://wa.me/${telClient.replace(/[^0-9]/g, '')}?text=${msgWhatsapp}` : `https://wa.me/?text=${msgWhatsapp}`;
-                const linkEmail = `mailto:${emailClient}?subject=${d.type} ${d.numero_ref}&body=Bonjour,%0A%0AVeuillez trouver en pièce jointe votre ${d.type} ${d.numero_ref} d'un montant de ${parseFloat(d.montant).toLocaleString()} $.`;
+                const linkEmail = `mailto:${emailClient}?subject=${d.type} ${d.numero_ref}&body=Bonjour,%0A%0AVoici votre document ${d.numero_ref} d'un montant de ${parseFloat(d.montant).toLocaleString()} $.`;
 
                 tbody.innerHTML += `
                     <tr>
@@ -205,38 +163,33 @@
                         <td>
                             <button class="btn-warning" onclick="preparerModification(${d.id})">Modifier</button>
                             <button class="btn-print" onclick='ouvrirPreview(${JSON.stringify(d)})'>Aperçu</button>
-                            <a href="${linkWhatsapp}" target="_blank" class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> WhatsApp PDF</a>
+                            <a href="${linkWhatsapp}" target="_blank" class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
                             <a href="${linkEmail}" class="btn-email"><i class="fa-solid fa-envelope"></i> Email</a>
                             <button class="btn-danger" onclick="supprimerDocument(${d.id})">Supprimer</button>
                         </td>
                     </tr>
                 `;
             });
-
-            if(!document.getElementById('document_id_edit').value) {
-                genererNumeroRef();
-            }
+            if(!document.getElementById('document_id_edit').value) genererNumeroRef();
         }
 
         function capitaliserTexte(str) {
             if (!str) return '';
-            return str.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+            return str.toLowerCase().replace(/(?:^|\s)\S/g, a => a.toUpperCase());
         }
 
         function toggleChampsPrix() {
-            const type = document.getElementById('type').value;
-            const isBL = (type === 'Bon de Livraison');
-            document.querySelectorAll('.champ-prix-visible').forEach(el => {
-                el.style.display = isBL ? 'none' : 'block';
-            });
+            const isBL = (document.getElementById('type').value === 'Bon de Livraison');
             document.getElementById('entete-lignes').style.gridTemplateColumns = isBL ? '3fr 1fr auto' : '2fr 1fr 1fr 1fr 1fr auto';
             document.getElementById('affichage-total-global').style.display = isBL ? 'none' : 'block';
+            document.querySelectorAll('.ligne-item').forEach(row => {
+                row.style.gridTemplateColumns = isBL ? '3fr 1fr auto' : '2fr 1fr 1fr 1fr 1fr auto';
+                row.querySelectorAll('.champ-prix-visible').forEach(el => el.style.display = isBL ? 'none' : 'block');
+            });
         }
 
         async function verifierEtGenererRef() {
-            if(!document.getElementById('document_id_edit').value) {
-                genererNumeroRef();
-            }
+            if(!document.getElementById('document_id_edit').value) genererNumeroRef();
         }
 
         async function genererNumeroRef() {
@@ -247,8 +200,7 @@
         }
 
         function ajouterLigneInput(designation = '', qte = 1, prix = 0, tva = 16) {
-            const type = document.getElementById('type').value;
-            const isBL = (type === 'Bon de Livraison');
+            const isBL = (document.getElementById('type').value === 'Bon de Livraison');
             const container = document.getElementById('lignes-inputs');
             const div = document.createElement('div');
             div.className = 'ligne-item';
@@ -269,7 +221,7 @@
                     </select>
                 </div>
                 <div class="champ-prix-visible" style="display: ${isBL ? 'none' : 'block'};"><input type="text" class="ligne-total" readonly style="background: #e5e7eb; font-weight: bold;" value="0.00"></div>
-                <div><button type="button" class="btn-danger" onclick="this.parentElement.parentElement.remove(); calculerTotalGlobal();" style="padding: 10px;">X</button></div>
+                <div><button type="button" class="btn-danger" onclick="this.parentElement.remove(); calculerTotalGlobal();" style="padding: 10px;">X</button></div>
             `;
             container.appendChild(div);
             calculerTotalGlobal();
@@ -286,8 +238,7 @@
                 if (prixInput && tvaSelect && totalField) {
                     const prix = parseFloat(prixInput.value) || 0;
                     const tva = parseFloat(tvaSelect.value) || 0;
-                    const sousTotal = qte * prix;
-                    const totalTTC = sousTotal * (1 + (tva / 100));
+                    const totalTTC = (qte * prix) * (1 + (tva / 100));
                     totalField.value = totalTTC.toFixed(2);
                     totalGeneral += totalTTC;
                 }
@@ -308,36 +259,25 @@
                 const tva = typeDoc === 'Bon de Livraison' ? 0 : (item.querySelector('.ligne-tva').value || 16);
                 const montantTotalLigne = typeDoc === 'Bon de Livraison' ? 0 : (item.querySelector('.ligne-total').value || 0);
 
-                if(designation) {
-                    lignes.push({ designation, qte, prix, tva, montant: montantTotalLigne });
-                }
+                if(designation) lignes.push({ designation, qte, prix, tva, montant: montantTotalLigne });
             });
 
-            if (lignes.length === 0) {
-                alert("Veuillez ajouter au moins une ligne.");
-                return;
-            }
+            if (lignes.length === 0) return alert("Ajoutez au moins une ligne.");
 
             const data = {
-                type: typeDoc,
-                numero_ref: document.getElementById('numero_ref').value,
+                type: typeDoc, numero_ref: document.getElementById('numero_ref').value,
                 locataire_id: document.getElementById('locataire_id').value || null,
                 bien_id: document.getElementById('bien_id').value || null,
                 date_emission: document.getElementById('date_emission').value,
                 date_validite: document.getElementById('date_validite').value,
-                statut: document.getElementById('statut').value,
-                lignes: lignes
+                statut: document.getElementById('statut').value, lignes
             };
 
-            const url = id ? `/api/factures/${id}` : '/api/factures';
-            const method = id ? 'PUT' : 'POST';
-
-            await fetch(url, {
-                method: method,
+            await fetch(id ? `/api/factures/${id}` : '/api/factures', {
+                method: id ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-
             resetFormulaire();
             chargerDonnees();
         }
@@ -345,7 +285,6 @@
         function preparerModification(id) {
             const d = documentsGlobal.find(x => x.id === id);
             if (!d) return;
-
             document.getElementById('document_id_edit').value = d.id;
             document.getElementById('type').value = d.type;
             document.getElementById('numero_ref').value = d.numero_ref || '';
@@ -362,8 +301,7 @@
             } else {
                 ajouterLigneInput('Prestation', 1, d.montant, 16);
             }
-
-            document.getElementById('form-title').innerText = "Modifier le document : " + d.numero_ref;
+            document.getElementById('form-title').innerText = "Modifier : " + d.numero_ref;
             document.getElementById('btn-submit-doc').innerText = "Mettre à jour";
             document.getElementById('btn-cancel-edit').style.display = 'inline-block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -382,7 +320,7 @@
         }
 
         async function supprimerDocument(id) {
-            if(confirm("Voulez-vous vraiment supprimer ce document ?")) {
+            if(confirm("Supprimer ce document ?")) {
                 await fetch(`/api/factures/${id}`, { method: 'DELETE' });
                 chargerDonnees();
             }
@@ -394,7 +332,7 @@
             document.getElementById('btn-gen-bl').style.display = isBL ? 'none' : 'inline-block';
 
             let lignesHtml = '';
-            if (d.lignes && d.lignes.length > 0) {
+            if (d.lignes) {
                 d.lignes.forEach(l => {
                     if (isBL) {
                         lignesHtml += `<tr><td style="border: 1px solid #cbd5e1; padding: 8px;">${capitaliserTexte(l.designation)}</td><td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${l.qte || 1}</td></tr>`;
@@ -407,46 +345,24 @@
             const clientObj = locatairesGlobal.find(l => l.id === d.locataire_id);
             const nomClient = clientObj ? `${capitaliserTexte(clientObj.nom)} ${capitaliserTexte(clientObj.prenom)}` : 'Client Divers';
 
-            const htmlContent = `
+            document.getElementById('preview-body').innerHTML = `
                 <div style="font-family: Arial, sans-serif; color: #333;">
                     <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 10px; margin-bottom: 20px;">
-                        <div>
-                            <h3 style="margin: 0; color: #0284c7;">Immo-Gérer RDC</h3>
-                            <p style="margin: 2px 0; font-size: 13px;">Gestion Immobilière & Prestations</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <h2 style="margin: 0; color: #0284c7;">${capitaliserTexte(d.type)}</h2>
-                            <p style="margin: 2px 0; font-size: 13px;"><strong>N° Réf :</strong> ${d.numero_ref}</p>
-                            <p style="margin: 2px 0; font-size: 13px;"><strong>Date :</strong> ${d.date_emission ? d.date_emission.split('T')[0] : '-'}</p>
-                        </div>
+                        <div><h3 style="margin: 0; color: #0284c7;">Immo-Gérer RDC</h3><p style="margin: 2px 0; font-size: 13px;">Gestion Immobilière & Prestations</p></div>
+                        <div style="text-align: right;"><h2 style="margin: 0; color: #0284c7;">${capitaliserTexte(d.type)}</h2><p style="margin: 2px 0; font-size: 13px;"><strong>N° Réf :</strong> ${d.numero_ref}</p></div>
                     </div>
                     <p><strong>Client :</strong> ${nomClient}</p>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-                        <thead>
-                            <tr style="background: #f1f5f9;">
-                                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">Désignation</th>
-                                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">Qté</th>
-                                ${isBL ? '' : '<th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Prix Unit.</th><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">TVA</th><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Total ($)</th>'}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${lignesHtml}
-                        </tbody>
+                        <thead><tr style="background: #f1f5f9;"><th style="border: 1px solid #cbd5e1; padding: 8px;">Désignation</th><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">Qté</th>${isBL ? '' : '<th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Prix Unit.</th><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">TVA</th><th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Total ($)</th>'}</tr></thead>
+                        <tbody>${lignesHtml}</tbody>
                     </table>
                     ${isBL ? '' : `<h3 style="text-align: right; margin-top: 20px;">Total Général : ${parseFloat(d.montant).toLocaleString()} $</h3>`}
-                    <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #cbd5e1; padding-top: 10px;">
-                        Immo-Gérer RDC - Kinshasa | Merci de votre confiance.
-                    </div>
                 </div>
             `;
-            document.getElementById('preview-body').innerHTML = htmlContent;
             document.getElementById('previewModal').style.display = 'flex';
         }
 
-        function fermerPreview() {
-            document.getElementById('previewModal').style.display = 'none';
-        }
-
+        function fermerPreview() { document.getElementById('previewModal').style.display = 'none'; }
         function genererBLAssocie() {
             if (!docActuelApercu) return;
             document.getElementById('type').value = 'Bon de Livraison';
@@ -454,22 +370,12 @@
             genererNumeroRef();
             document.getElementById('locataire_id').value = docActuelApercu.locataire_id || '';
             document.getElementById('bien_id').value = docActuelApercu.bien_id || '';
-            
             document.getElementById('lignes-inputs').innerHTML = '';
-            if (docActuelApercu.lignes && docActuelApercu.lignes.length > 0) {
-                docActuelApercu.lignes.forEach(l => ajouterLigneInput(l.designation, l.qte || 1, 0, 0));
-            }
-
+            if (docActuelApercu.lignes) docActuelApercu.lignes.forEach(l => ajouterLigneInput(l.designation, l.qte || 1, 0, 0));
             fermerPreview();
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            alert("Bon de Livraison pré-initialisé sans prix (adapté pour la livraison).");
         }
-
-        function imprimerDepuisPreview() {
-            if (!docActuelApercu) return;
-            ouvrirPreview(docActuelApercu);
-            setTimeout(() => { window.print(); }, 300);
-        }
+        function imprimerDepuisPreview() { window.print(); }
 
         resetFormulaire();
         chargerDonnees();
