@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; text-transform: none; }
         aside { width: 260px; background: white; height: 100vh; position: fixed; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; }
         .logo-area { padding: 20px; font-size: 22px; font-weight: bold; color: #0284c7; display: flex; align-items: center; gap: 10px; }
         aside ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
@@ -20,17 +20,16 @@
         th { background-color: #f9fafb; color: #374151; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px; }
-        input, textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; background: white; }
         button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         button:hover { background: #0369a1; }
         .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; }
     </style>
 </head>
 <body>
+
     <aside>
-        <div class="logo-area">
-            <i class="fa-solid fa-building-shield"></i> ImmoGérer
-        </div>
+        <div class="logo-area"><i class="fa-solid fa-building-shield"></i> ImmoGérer</div>
         <ul>
             <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
             <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
@@ -46,18 +45,40 @@
     </aside>
 
     <main>
-        <h2>Gestion de l'Inventaire & du Stock</h2>
+        <h2>Gestion de l'Inventaire, du Stock & Liaison Comptable</h2>
+        
         <div class="card">
-            <h3>Ajouter un nouvel article au stock</h3>
+            <h3>Ajouter un article en stock (Génère une écriture comptable)</h3>
             <form action="/api/inventaire" method="POST">
                 <div class="form-grid">
-                    <div><label>Désignation :</label><input type="text" name="designation" required></div>
-                    <div><label>Référence / Code :</label><input type="text" name="reference"></div>
-                    <div><label>Quantité en stock :</label><input type="number" name="quantite_stock" value="0" min="0" required></div>
-                    <div><label>Prix unitaire ($) :</label><input type="number" step="0.01" name="prix_unitaire" value="0" required></div>
+                    <div><label>Désignation :</label><input type="text" name="designation" placeholder="Ex: Matériel plomberie" required></div>
+                    <div><label>Référence :</label><input type="text" name="reference" placeholder="Ex: REF-001"></div>
+                    <div><label>Quantité en stock :</label><input type="number" name="quantite_stock" value="1" required></div>
+                    <div><label>Prix unitaire ($) :</label><input type="number" step="0.01" name="prix_unitaire" required></div>
+                    
+                    <div>
+                        <label>Compte Débit (Imputation Stock/Achat) :</label>
+                        <select name="compte_debit" required>
+                            <option value="321 - Matières et fournitures consommables">321 - Matières et fournitures consommables</option>
+                            <option value="601 - Achats de marchandises">601 - Achats de marchandises</option>
+                            <option value="606 - Achats fournitures & consommables">606 - Achats fournitures & consommables</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Compte Crédit (Trésorerie/Paiement) :</label>
+                        <select name="compte_credit" required>
+                            <option value="531 - Caisse">531 - Caisse</option>
+                            <option value="521 - Banque">521 - Banque</option>
+                            <option value="401 - Fournisseurs">401 - Fournisseurs</option>
+                        </select>
+                    </div>
                 </div>
-                <div style="margin-bottom: 15px;"><label>Description / Remarques :</label><textarea name="description" rows="2"></textarea></div>
-                <button type="submit">Enregistrer l'article</button>
+                <div style="margin-bottom: 15px;">
+                    <label>Description / Remarques :</label>
+                    <textarea name="description" rows="2" placeholder="Détails supplémentaires..."></textarea>
+                </div>
+                <button type="submit">Enregistrer l'article & impacter la comptabilité</button>
             </form>
         </div>
 
@@ -65,40 +86,48 @@
             <h3>État du Stock Actuel</h3>
             <table>
                 <thead>
-                    <tr><th>Référence</th><th>Désignation</th><th>Quantité</th><th>Prix Unitaire</th><th>Valeur Totale</th><th>Actions</th></tr>
+                    <tr><th>Désignation</th><th>Référence</th><th>Quantité</th><th>Prix Unitaire</th><th>Valeur Totale</th><th>Actions</th></tr>
                 </thead>
-                <tbody id="liste-inventaire"></tbody>
+                <tbody id="liste-stock"></tbody>
             </table>
         </div>
     </main>
 
     <script>
-        async function chargerInventaire() {
+        async function chargerStock() {
             const res = await fetch('/api/inventaire');
             const data = await res.json();
-            const tbody = document.getElementById('liste-inventaire');
+            const tbody = document.getElementById('liste-stock');
             tbody.innerHTML = '';
+
             data.forEach(item => {
-                const valeurTotale = parseFloat(item.quantite_stock) * parseFloat(item.prix_unitaire);
+                const qte = parseInt(item.quantite_stock) || 0;
+                const pu = parseFloat(item.prix_unitaire) || 0;
+                const total = qte * pu;
+
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong>${item.reference || '-'}</strong></td>
-                        <td>${item.designation}</td>
-                        <td>${item.quantite_stock}</td>
-                        <td>${parseFloat(item.prix_unitaire).toLocaleString()} $</td>
-                        <td><strong>${valeurTotale.toLocaleString()} $</strong></td>
-                        <td><button class="btn-danger" onclick="supprimerArticle(${item.id})">Supprimer</button></td>
+                        <td><strong>${item.designation}</strong></td>
+                        <td>${item.reference || '-'}</td>
+                        <td>${qte}</td>
+                        <td>${pu.toLocaleString()} $</td>
+                        <td><strong>${total.toLocaleString()} $</strong></td>
+                        <td>
+                            <button class="btn-danger" onclick="supprimerArticle(${item.id})">Supprimer</button>
+                        </td>
                     </tr>
                 `;
             });
         }
+
         async function supprimerArticle(id) {
-            if(confirm("Supprimer cet article ?")) {
+            if(confirm("Voulez-vous vraiment supprimer cet article du stock ?")) {
                 await fetch(`/api/inventaire/${id}`, { method: 'DELETE' });
-                chargerInventaire();
+                chargerStock();
             }
         }
-        chargerInventaire();
+
+        chargerStock();
     </script>
 </body>
 </html>
