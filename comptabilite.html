@@ -20,10 +20,10 @@
         th { background-color: #f9fafb; color: #374151; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; background: white; }
         button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         button:hover { background: #0369a1; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; flex-wrap: wrap; }
         .tab-btn { background: #e5e7eb; color: #374151; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; }
         .tab-btn.active { background: #0284c7; color: white; }
         .tab-content { display: none; }
@@ -66,13 +66,37 @@
         <!-- ONGLET 1 : JOURNAL GÉNÉRAL -->
         <div id="journal" class="tab-content active">
             <div class="card">
-                <h3>Saisir une écriture manuelle</h3>
+                <h3>Saisir une écriture comptable manuelle</h3>
                 <form id="ecriture-form" onsubmit="ajouterEcriture(event)">
                     <div class="form-grid">
                         <div><label>Date :</label><input type="date" id="date_operation" required></div>
                         <div><label>Libellé :</label><input type="text" id="libelle" placeholder="Ex: Achat fournitures" required></div>
-                        <div><label>Compte Débit :</label><input type="text" id="compte_debit" placeholder="Ex: 606 - Achats" required></div>
-                        <div><label>Compte Crédit :</label><input type="text" id="compte_credit" placeholder="Ex: 531 - Caisse" required></div>
+                        
+                        <div>
+                            <label>Compte Débit :</label>
+                            <select id="compte_debit" required>
+                                <option value="">-- Choisir le compte débit --</option>
+                                <option value="531 - Caisse">531 - Caisse</option>
+                                <option value="521 - Banque">521 - Banque</option>
+                                <option value="606 - Achats fournitures & consommables">606 - Achats fournitures & consommables</option>
+                                <option value="635 - Impôts et taxes (IRL)">635 - Impôts et taxes (IRL)</option>
+                                <option value="621 - Personnel / Salaires">621 - Personnel / Salaires</option>
+                                <option value="411 - Clients / Locataires">411 - Clients / Locataires</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label>Compte Crédit :</label>
+                            <select id="compte_credit" required>
+                                <option value="">-- Choisir le compte crédit --</option>
+                                <option value="531 - Caisse">531 - Caisse</option>
+                                <option value="521 - Banque">521 - Banque</option>
+                                <option value="706 - Location de biens immobiliers">706 - Location de biens immobiliers</option>
+                                <option value="443 - État, TVA / Taxes dues">443 - État, TVA / Taxes dues</option>
+                                <option value="401 - Fournisseurs">401 - Fournisseurs</option>
+                            </select>
+                        </div>
+
                         <div><label>Montant ($) :</label><input type="number" step="0.01" id="montant" required></div>
                         <div>
                             <label>Type de Flux :</label>
@@ -136,7 +160,7 @@
             </div>
             <div class="card">
                 <h3>Synthèse de la Situation Financière</h3>
-                <p>Ce rapport présente la synthèse de vos classes de comptes (Produits encaissés via les loyers/factures et Charges/Décaissements enregistrés).</p>
+                <p>Ce rapport présente la synthèse de vos classes de comptes (Produits issus des locations/factures et Charges/Taxes enregistrées).</p>
             </div>
         </div>
     </main>
@@ -175,7 +199,6 @@
             const res = await fetch('/api/comptabilite/grand-livre');
             const balanceData = await res.json();
 
-            // Remplir la Balance
             const tbodyBalance = document.getElementById('liste-balance');
             tbodyBalance.innerHTML = '';
             let totalProd = 0, totalCharg = 0;
@@ -192,11 +215,9 @@
                     </tr>
                 `;
 
-                // Calcul Produits & Charges pour le Bilan
                 if (b.compte.startsWith('7')) totalProd += b.totalCredit;
                 if (b.compte.startsWith('6')) totalCharg += b.totalDebit;
 
-                // Grand Livre details
                 glHtml += `<div style="margin-bottom: 20px; border: 1px solid #e5e7eb; padding: 15px; border-radius: 6px;">
                     <h4 style="margin: 0 0 10px 0; color: #0284c7;">Compte : ${b.compte}</h4>
                     <table style="margin: 0;">
@@ -210,7 +231,6 @@
 
             document.getElementById('conteneur-grand-livre').innerHTML = glHtml;
 
-            // Mise à jour Bilan / Résultat
             document.getElementById('valeur-produits').innerText = totalProd.toLocaleString() + ' $';
             document.getElementById('valeur-charges').innerText = totalCharg.toLocaleString() + ' $';
             const resultatNet = totalProd - totalCharg;
