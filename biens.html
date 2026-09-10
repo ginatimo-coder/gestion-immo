@@ -85,16 +85,6 @@
                 <tbody id="liste-biens"></tbody>
             </table>
         </div>
-
-        <div class="card">
-            <h3>Liste des Biens Immobiliers</h3>
-            <table>
-                <thead>
-                    <tr><th>Nom du Bien</th><th>Type</th><th>Loyer Mensuel</th><th>Statut</th><th>Actions</th></tr>
-                </thead>
-                <tbody id="liste-biens"></tbody>
-            </table>
-        </div>
     </main>
 
     <script>
@@ -108,11 +98,14 @@
 
             biensGlobal.forEach(b => {
                 const badgeColor = b.statut === 'Loué' ? '#dc2626' : '#059669';
+                const irlCalculé = b.irl ? parseFloat(b.irl).toLocaleString() : (parseFloat(b.loyer) * 0.20).toLocaleString();
+                
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>${b.nom_bien}</strong></td>
                         <td>${b.type}</td>
                         <td><strong>${parseFloat(b.loyer).toLocaleString()} $</strong></td>
+                        <td style="color: #4b5563;">${irlCalculé} $</td>
                         <td><span style="color: white; background: ${badgeColor}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${b.statut}</span></td>
                         <td>
                             <button class="btn-warning" onclick="preparerModif(${b.id})">Modifier</button>
