@@ -272,7 +272,7 @@ app.delete('/api/baux/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API PAIEMENTS & COMPTABILITÉ CAISSE ---
+// --- API PAIEMENTS & COMPTABILITÉ (Caisse & Taxe IRL) ---
 app.get('/api/paiements', async (req, res) => {
     try {
         const query = `SELECT paiements.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM paiements JOIN locataires ON paiements.locataire_id = locataires.id JOIN biens ON paiements.bien_id = biens.id ORDER BY paiements.id DESC;`;
@@ -284,16 +284,38 @@ app.get('/api/paiements', async (req, res) => {
 app.post('/api/paiements', async (req, res) => {
     try {
         let { locataire_id, bien_id, date_paiement, montant, statut } = req.body;
-        await pool.query('INSERT INTO paiements (locataire_id, bien_id, date_paiement, montant, statut) VALUES ($1, $2, $3, $4, $5)', [locataire_id, bien_id, date_paiement || null, montant, statut || 'Payé']);
+        const montantNum = parseFloat(montant) || 0;
+
+        await pool.query('INSERT INTO paiements (locataire_id, bien_id, date_paiement, montant, statut) VALUES ($1, $2, $3, $4, $5)', [locataire_id, bien_id, date_paiement || null, montantNum, statut || 'Payé']);
         
         if ((statut || 'Payé') === 'Payé') {
+            // 1. Encaissement brut dans la Caisse (531)
             await pool.query(
                 `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
                  VALUES ($1, $2, '531 - Caisse', '706 - Location de biens', $3, 'Encaissement')`,
-                [date_paiement || null, `Paiement loyer - Locataire ID ${locataire_id} (Bien ID ${bien_id})`, montant]
+                [date_paiement || null, `Paiement loyer - Locataire ID ${locataire_id} (Bien ID ${bien_id})`, montantNum]
+            );
+
+            // 2. Écriture automatique de la taxe IRL (20%) dans la comptabilité
+            const irlMontant = montantNum * 0.20;
+            await pool.query(
+                `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
+                 VALUES ($1, $2, '635 - Impôts et taxes (IRL)', '443 - État, TVA / Taxes dues', $3, 'Décaissement')`,
+                [date_paiement || null, `Taxe IRL 20% sur loyer - Bien ID ${bien_id}`, irlMontant]
             );
         }
-        res.redirect('/paiements');
+        res.sendStatus(200);
+    } catch (err) { res.status(500).send(err.message); }
+});
+
+app.put('/api/paiements/:id', async (req, res) => {
+    try {
+        let { locataire_id, bien_id, date_paiement, montant, statut } = req.body;
+        await pool.query(
+            'UPDATE paiements SET locataire_id = $1, bien_id = $2, date_paiement = $3, montant = $4, statut = $5 WHERE id = $6',
+            [locataire_id, bien_id, date_paiement || null, montant, statut || 'Payé', req.params.id]
+        );
+        res.sendStatus(200);
     } catch (err) { res.status(500).send(err.message); }
 });
 
