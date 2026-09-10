@@ -3,161 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finances & Paiements - ImmoGérer</title>
+    <title>ImmoGérer - Finances & Paiements</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; text-transform: none; }
+        aside { width: 260px; background: white; height: 100vh; position: fixed; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; }
+        .logo-area { padding: 20px; font-size: 22px; font-weight: bold; color: #0284c7; display: flex; align-items: center; gap: 10px; }
+        aside ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        aside ul li a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #4b5563; text-decoration: none; font-weight: 500; transition: 0.2s; }
+        aside ul li a:hover, aside ul li a.active { background: #f0f9ff; color: #0284c7; border-left: 4px solid #0284c7; }
+        main { margin-left: 260px; padding: 30px; width: calc(100% - 260px); box-sizing: border-box; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid #e5e7eb; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+        th { background-color: #f9fafb; color: #374151; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0369a1; }
+        .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; }
+        .btn-whatsapp { background: #25d366; padding: 6px 12px; font-size: 12px; color: white; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-card h4 { margin: 0 0 10px 0; color: #6b7280; font-size: 14px; }
+        .stat-card .value { font-size: 24px; font-weight: bold; color: #059669; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="brand">
-                <i class="fa-solid fa-building-shield"></i> ImmoGérer
+
+    <aside>
+        <div class="logo-area"><i class="fa-solid fa-building-shield"></i> ImmoGérer</div>
+        <ul>
+            <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+            <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
+            <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
+            <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+            <li><a href="/paiements" class="active"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+            <li><a href="/inventaire"><i class="fa-solid fa-boxes-stacked"></i> Inventaire & Stock</a></li>
+            <li><a href="/factures"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
+            <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
+            <li><a href="/rh"><i class="fa-solid fa-user-tie"></i> Ressources Humaines</a></li>
+            <li><a href="/logout" style="color: #dc2626;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+        </ul>
+    </aside>
+
+    <main>
+        <h2>Finances & Suivi des Paiements</h2>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h4>Total Général Encaissé</h4>
+                <div class="value" id="total-encaisse">0.00 $</div>
             </div>
-            <ul>
-                <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
-                <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
-                <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
-                <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
-                <li><a href="/paiements" class="active"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-                <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
-                <li><a href="/factures"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
-                <li><a href="/rh"><i class="fa-solid fa-user-tie"></i> Ressources Humaines</a></li>
-                <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
-            </ul>
-        </aside>
+        </div>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <header class="top-header">
-                <h1>Finances & Paiements</h1>
-                <button class="btn-primary" onclick="toggleFormulaire()">
-                    <i class="fa-solid fa-plus"></i> Enregistrer un paiement
-                </button>
-            </header>
-
-            <!-- Formulaire d'ajout -->
-            <div id="form-container" class="form-container" style="display: none;">
-                <h3 style="margin-bottom: 20px; color: #0284c7;">Nouveau Paiement de Loyer</h3>
-                <form action="/api/paiements" method="POST">
-                    <div class="form-group">
+        <div class="card">
+            <h3>Enregistrer un nouveau paiement de loyer</h3>
+            <form id="paiement-form" onsubmit="enregistrerPaiement(event)">
+                <div class="form-grid">
+                    <div>
                         <label>Locataire :</label>
-                        <select name="locataire_id" id="select-locataires" required>
-                            <option value="">Chargement...</option>
-                        </select>
+                        <select id="locataire_id" required><option value="">-- Choisir un locataire --</option></select>
                     </div>
-                    <div class="form-group">
+                    <div>
                         <label>Bien Immobilier :</label>
-                        <select name="bien_id" id="select-biens" required>
-                            <option value="">Chargement...</option>
-                        </select>
+                        <select id="bien_id" required><option value="">-- Choisir un bien --</option></select>
                     </div>
-                    <div class="form-group">
-                        <label>Date du paiement :</label>
-                        <input type="date" name="date_paiement" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Montant ($) :</label>
-                        <input type="number" step="0.01" name="montant" required placeholder="Ex: 500">
-                    </div>
-                    <div class="form-group">
+                    <div><label>Date du paiement :</label><input type="date" id="date_paiement" required></div>
+                    <div><label>Montant ($) :</label><input type="number" step="0.01" id="montant" required></div>
+                    <div>
                         <label>Statut :</label>
-                        <select name="statut">
+                        <select id="statut">
                             <option value="Payé">Payé</option>
-                            <option value="En retard">En retard</option>
+                            <option value="En attente">En attente</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn-primary">Enregistrer le paiement</button>
-                </form>
-            </div>
-
-            <!-- Liste des Paiements -->
-            <div class="card">
-                <h3 style="margin-bottom: 20px; color: #1e293b;">Historique des Paiements</h3>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Locataire</th>
-                                <th>Bien</th>
-                                <th>Date</th>
-                                <th>Montant</th>
-                                <th>Statut</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="paiements-list">
-                            <tr>
-                                <td colspan="6" style="text-align: center; color: #64748b;">Chargement des données...</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
-            </div>
-        </main>
-    </div>
+                <button type="submit">Valider et Enregistrer le paiement</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Historique des Paiements & Encaissements</h3>
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Locataire</th><th>Bien</th><th>Montant</th><th>Statut</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="liste-paiements"></tbody>
+            </table>
+        </div>
+    </main>
 
     <script>
-        function toggleFormulaire() {
-            const form = document.getElementById('form-container');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        let locatairesGlobal = [];
+
+        async function chargerDonneesInitiales() {
+            // Charger locataires
+            const resLoc = await fetch('/api/locataires');
+            locatairesGlobal = await resLoc.json();
+            const selectLoc = document.getElementById('locataire_id');
+            selectLoc.innerHTML = '<option value="">-- Choisir un locataire --</option>';
+            locatairesGlobal.forEach(l => {
+                selectLoc.innerHTML += `<option value="${l.id}">${capitaliserTexte(l.nom)} ${capitaliserTexte(l.prenom)}</option>`;
+            });
+
+            // Charger biens
+            const resBiens = await fetch('/api/biens');
+            const biens = await resBiens.json();
+            const selectBien = document.getElementById('bien_id');
+            selectBien.innerHTML = '<option value="">-- Choisir un bien --</option>';
+            biens.forEach(b => {
+                selectBien.innerHTML += `<option value="${b.id}">${capitaliserTexte(b.nom_bien)} (${parseFloat(b.loyer).toLocaleString()} $)</option>`;
+            });
+
+            chargerPaiements();
         }
 
-        function chargerDonneesFormulaire() {
-            fetch('/api/locataires')
-                .then(res => res.json())
-                .then(locataires => {
-                    const selectL = document.getElementById('select-locataires');
-                    if(selectL) selectL.innerHTML = locataires.map(l => `<option value="${l.id}">${l.nom} ${l.prenom}</option>`).join('');
-                });
-
-            fetch('/api/biens')
-                .then(res => res.json())
-                .then(biens => {
-                    const selectB = document.getElementById('select-biens');
-                    if(selectB) selectB.innerHTML = biens.map(b => `<option value="${b.id}">${b.nom_bien} (${b.loyer}$)</option>`).join('');
-                });
+        function capitaliserTexte(str) {
+            if (!str) return '';
+            return str.toLowerCase().replace(/(?:^|\s)\S/g, a => a.toUpperCase());
         }
 
-        function chargerPaiements() {
-            fetch('/api/paiements')
-                .then(res => res.json())
-                .then(data => {
-                    const tbody = document.getElementById('paiements-list');
-                    if (!tbody) return;
+        async function chargerPaiements() {
+            const res = await fetch('/api/paiements');
+            const paiements = await res.json();
+            const tbody = document.getElementById('liste-paiements');
+            tbody.innerHTML = '';
+            
+            let totalGeneral = 0;
 
-                    if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #64748b;">Aucun paiement enregistré.</td></tr>';
-                        return;
+            paiements.forEach(p => {
+                const montantNum = parseFloat(p.montant) || 0;
+                if (p.statut === 'Payé') totalGeneral += montantNum;
+
+                const badgeColor = p.statut === 'Payé' ? '#059669' : '#d97706';
+                const clientObj = locatairesGlobal.find(l => l.id === p.locataire_id);
+                const telClient = clientObj && clientObj.telephone ? clientObj.telephone.replace(/[^0-9]/g, '') : '';
+                
+                const messageWp = encodeURIComponent(`Bonjour ${clientObj ? capitaliserTexte(clientObj.prenom) : ''}, nous vous confirmons la bonne réception de votre paiement de loyer d'un montant de ${montantNum.toLocaleString()} $ effectué le ${p.date_paiement ? p.date_paiement.split('T')[0] : 'ce jour'}. Merci de votre confiance !`);
+                const lienWhatsapp = telClient ? `https://wa.me/${telClient}?text=${messageWp}` : `https://wa.me/?text=${messageWp}`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${p.date_paiement ? p.date_paiement.split('T')[0] : '-'}</td>
+                        <td><strong>${p.locataire_nom ? capitaliserTexte(p.locataire_nom) + ' ' + capitaliserTexte(p.locataire_prenom) : 'N/A'}</strong></td>
+                        <td>${p.nom_bien ? capitaliserTexte(p.nom_bien) : '-'}</td>
+                        <td><strong>${montantNum.toLocaleString()} $</strong></td>
+                        <td><span style="color: white; background: ${badgeColor}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${p.statut}</span></td>
+                        <td>
+                            <a href="${lienWhatsapp}" target="_blank" class="btn-whatsapp" title="Envoyer reçu WhatsApp"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+                            <button class="btn-danger" onclick="supprimerPaiement(${p.id})">Supprimer</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('total-encaisse').innerText = totalGeneral.toLocaleString() + ' $';
+        }
+
+        async function enregistrerPaiement(event) {
+            event.preventDefault();
+            const locataire_id = document.getElementById('locataire_id').value;
+            const bien_id = document.getElementById('bien_id').value;
+            const date_paiement = document.getElementById('date_paiement').value;
+            const montant = document.getElementById('montant').value;
+            const statut = document.getElementById('statut').value;
+
+            const data = { locataire_id, bien_id, date_paiement, montant, statut };
+
+            const res = await fetch('/api/paiements', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                // Trouver le locataire pour déclencher la boîte de dialogue WhatsApp
+                const loc = locatairesGlobal.find(l => l.id == locataire_id);
+                if (loc && statut === 'Payé') {
+                    if (confirm(`Paiement de ${parseFloat(montant).toLocaleString()} $ enregistré avec succès !\n\nVoulez-vous envoyer un message de confirmation WhatsApp à ${capitaliserTexte(loc.prenom)} ${capitaliserTexte(loc.nom)} ?`)) {
+                        const telNettoye = loc.telephone ? loc.telephone.replace(/[^0-9]/g, '') : '';
+                        const msg = encodeURIComponent(`Bonjour ${capitaliserTexte(loc.prenom)} ${capitaliserTexte(loc.nom)}, nous vous confirmons la bonne réception de votre paiement de loyer d'un montant de ${parseFloat(montant).toLocaleString()} $. Merci de votre confiance !`);
+                        window.open(`https://wa.me/${telNettoye}?text=${msg}`, '_blank');
                     }
-                    tbody.innerHTML = data.map(p => `
-                        <tr>
-                            <td><strong>${p.locataire_nom || ''} ${p.locataire_prenom || ''}</strong></td>
-                            <td>${p.nom_bien || ''}</td>
-                            <td>${p.date_paiement ? p.date_paiement.substring(0, 10) : ''}</td>
-                            <td><strong>${parseFloat(p.montant || 0).toLocaleString()} $</strong></td>
-                            <td><span class="badge ${p.statut === 'Payé' ? 'badge-success' : 'badge-warning'}">${p.statut || 'Payé'}</span></td>
-                            <td>
-                                <button class="btn-action btn-delete" onclick="supprimerPaiement(${p.id})">Supprimer</button>
-                            </td>
-                        </tr>
-                    `).join('');
-                });
-        }
+                } else {
+                    alert("Paiement enregistré avec succès !");
+                }
 
-        function supprimerPaiement(id) {
-            if (confirm("Voulez-vous vraiment supprimer ce paiement ?")) {
-                fetch(`/api/paiements/${id}`, { method: 'DELETE' })
-                    .then(res => {
-                        if (res.ok) chargerPaiements();
-                    });
+                document.getElementById('paiement-form').reset();
+                document.getElementById('date_paiement').valueAsDate = new Date();
+                chargerPaiements();
+            } else {
+                alert("Erreur lors de l'enregistrement du paiement.");
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            chargerPaiements();
-            chargerDonneesFormulaire();
-        });
+        async function supprimerPaiement(id) {
+            if(confirm("Voulez-vous vraiment supprimer ce paiement ?")) {
+                await fetch(`/api/paiements/${id}`, { method: 'DELETE' });
+                chargerPaiements();
+            }
+        }
+
+        // Initialisation de la date du jour et chargement
+        document.getElementById('date_paiement').valueAsDate = new Date();
+        chargerDonneesInitiales();
     </script>
 </body>
 </html>
