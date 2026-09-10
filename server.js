@@ -489,15 +489,28 @@ app.post('/api/presences/sync', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API PAIE ---
+// --- API PAIE (Avec liaison automatique au journal comptable) ---
 app.post('/api/paie', async (req, res) => {
     try {
         const { employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net, date_paiement } = req.body;
+        const netNum = parseFloat(salaire_net) || 0;
+
+        // 1. Enregistrement de la paie
         await pool.query(
             `INSERT INTO paie (employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net, date_paiement) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [employe_id, mois, annee, primes || 0, heures_sup || 0, charges_sociales || 0, salaire_net || 0, date_paiement || null]
+            [employe_id, mois, annee, primes || 0, heures_sup || 0, charges_sociales || 0, netNum, date_paiement || null]
         );
+
+        // 2. Écriture automatique dans le journal comptable (Salaires vs Caisse)
+        if (netNum > 0) {
+            await pool.query(
+                `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
+                 VALUES ($1, $2, '621 - Personnel / Salaires', '531 - Caisse', $3, 'Décaissement')`,
+                [date_paiement || null, `Paiement salaire - Employé ID ${employe_id} (${mois} ${annee})`, netNum]
+            );
+        }
+
         res.sendStatus(200);
     } catch (err) {
         res.status(500).send(err.message);
