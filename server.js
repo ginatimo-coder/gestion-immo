@@ -467,7 +467,7 @@ app.post('/api/presences/sync', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API COMPTABILITÉ ---
+// --- API COMPTABILITÉ AVANCÉE (Journal, Grand Livre, Balance) ---
 app.get('/api/comptabilite/journal', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM journal_comptable ORDER BY date_operation DESC, id DESC');
@@ -475,10 +475,53 @@ app.get('/api/comptabilite/journal', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
+app.get('/api/comptabilite/grand-livre', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM journal_comptable ORDER BY date_operation ASC, id ASC');
+        let ecritures = result.rows;
+        let comptes = {};
+
+        ecritures.forEach(e => {
+            const m = parseFloat(e.montant) || 0;
+            if (e.compte_debit) {
+                if (!comptes[e.compte_debit]) comptes[e.compte_debit] = { mouvement: [], totalDebit: 0, totalCredit: 0 };
+                comptes[e.compte_debit].mouvement.push({ date: e.date_operation, libelle: e.libelle, type: 'Débit', montant: m });
+                comptes[e.compte_debit].totalDebit += m;
+            }
+            if (e.compte_credit) {
+                if (!comptes[e.compte_credit]) comptes[e.compte_credit] = { mouvement: [], totalDebit: 0, totalCredit: 0 };
+                comptes[e.compte_credit].mouvement.push({ date: e.date_operation, libelle: e.libelle, type: 'Crédit', montant: m });
+                comptes[e.compte_credit].totalCredit += m;
+            }
+        });
+
+        let balance = [];
+        for (let compte in comptes) {
+            let tD = comptes[compte].totalDebit;
+            let tC = comptes[compte].totalCredit;
+            let soldeDebiteur = tD > tC ? tD - tC : 0;
+            let soldeCrediteur = tC > tD ? tC - tD : 0;
+
+            balance.push({
+                compte,
+                totalDebit: tD,
+                totalCredit: tC,
+                soldeDebiteur,
+                soldeCrediteur,
+                mouvements: comptes[compte].mouvement
+            });
+        }
+        res.json(balance);
+    } catch (err) { res.status(500).send(err.message); }
+});
+
 app.post('/api/comptabilite/ecriture', async (req, res) => {
     try {
         let { date_operation, libelle, compte_debit, compte_credit, montant, type_flux } = req.body;
-        await pool.query(`INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) VALUES ($1, $2, $3, $4, $5, $6)`, [date_operation || null, libelle, compte_debit, compte_credit, montant, type_flux]);
+        await pool.query(
+            `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) VALUES ($1, $2, $3, $4, $5, $6)`,
+            [date_operation || null, libelle, compte_debit, compte_credit, montant, type_flux]
+        );
         res.sendStatus(200);
     } catch (err) { res.status(500).send(err.message); }
 });
