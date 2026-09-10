@@ -291,6 +291,14 @@ app.delete('/api/paiements/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
+// --- API CAISSE ---
+app.get('/api/caisse', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM journal_comptable WHERE compte_debit LIKE '531%' OR compte_credit LIKE '531%' ORDER BY id DESC");
+        res.json(result.rows);
+    } catch (err) { res.status(500).send(err.message); }
+});
+
 // --- API INVENTAIRE & STOCK ---
 app.get('/api/inventaire', async (req, res) => {
     try {
