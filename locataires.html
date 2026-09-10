@@ -2,129 +2,165 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion des Locataires - ImmoGérer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImmoGérer - Gestion des Locataires</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; }
+        aside { width: 260px; background: white; height: 100vh; position: fixed; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; }
+        .logo-area { padding: 20px; font-size: 22px; font-weight: bold; color: #0284c7; display: flex; align-items: center; gap: 10px; }
+        aside ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        aside ul li a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #4b5563; text-decoration: none; font-weight: 500; transition: 0.2s; }
+        aside ul li a:hover, aside ul li a.active { background: #f0f9ff; color: #0284c7; border-left: 4px solid #0284c7; }
+        main { margin-left: 260px; padding: 30px; width: calc(100% - 260px); box-sizing: border-box; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid #e5e7eb; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+        th { background-color: #f9fafb; color: #374151; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px; }
+        input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0369a1; }
+        .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; }
+        .btn-warning { background: #d97706; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; }
+        .btn-whatsapp { background: #25d366; padding: 6px 12px; font-size: 12px; color: white; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="brand">
-                <i class="fa-solid fa-building-shield"></i>
-                <h2>ImmoGérer</h2>
-            </div>
-            <ul>
-                <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
-                <li><a href="/locataires" class="active"><i class="fa-solid fa-users"></i> Locataires</a></li>
-                <li><a href="/biens"><i class="fa-solid fa-city"></i> Biens immobiliers</a></li>
-                <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
-                <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-                <li><a href="/comptabilite"><i class="fa-solid fa-calculator"></i> Comptabilité Générale</a></li>
-                <li><a href="/factures"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
-                <li><a href="/rh"><i class="fa-solid fa-user-tie"></i> Ressources Humaines</a></li>
-                <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
-            </ul>
-        </aside>
 
-        <main class="main-content">
-            <header class="top-header">
-                <h1>Gestion des Locataires</h1>
-                <button onclick="toggleFormulaire()" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <i class="fa-solid fa-user-plus"></i> Ajouter un locataire
-                </button>
-            </header>
+    <aside>
+        <div class="logo-area"><i class="fa-solid fa-building-shield"></i> ImmoGérer</div>
+        <ul>
+            <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+            <li><a href="/locataires" class="active"><i class="fa-solid fa-users"></i> Locataires</a></li>
+            <li><a href="/biens"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
+            <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+            <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+            <li><a href="/inventaire"><i class="fa-solid fa-boxes-stacked"></i> Inventaire & Stock</a></li>
+            <li><a href="/factures"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
+            <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
+            <li><a href="/rh"><i class="fa-solid fa-user-tie"></i> Ressources Humaines</a></li>
+            <li><a href="/logout" style="color: #dc2626;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+        </ul>
+    </aside>
 
-            <!-- Formulaire d'ajout (caché par défaut, s'affiche au clic) -->
-            <div id="form-container" class="form-container" style="display: none; margin-bottom: 25px;">
-                <h3>Nouveau Locataire</h3>
-                <form action="/api/locataires" method="POST">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div class="form-group">
-                            <label>Nom :</label>
-                            <input type="text" name="nom" required placeholder="Nom de famille">
-                        </div>
-                        <div class="form-group">
-                            <label>Prénom :</label>
-                            <input type="text" name="prenom" required placeholder="Prénom">
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div class="form-group">
-                            <label>Email :</label>
-                            <input type="email" name="email" placeholder="adresse@email.com">
-                        </div>
-                        <div class="form-group">
-                            <label>Téléphone :</label>
-                            <input type="text" name="telephone" placeholder="+243...">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Date de naissance :</label>
-                        <input type="date" name="date_naissance">
-                    </div>
-                    <button type="submit" class="btn-primary">Enregistrer le locataire</button>
-                </form>
-            </div>
+    <main>
+        <h2>Gestion des Locataires</h2>
+        
+        <div class="card">
+            <h3 id="form-title">Ajouter un nouveau locataire</h3>
+            <form id="locataire-form" onsubmit="enregistrerLocataire(event)">
+                <input type="hidden" id="locataire_id_edit">
+                <div class="form-grid">
+                    <div><label>Nom :</label><input type="text" id="nom" required></div>
+                    <div><label>Prénom :</label><input type="text" id="prenom" required></div>
+                    <div><label>Email :</label><input type="email" id="email"></div>
+                    <div><label>Téléphone :</label><input type="text" id="telephone" placeholder="ex: +243..." required></div>
+                    <div><label>Adresse :</label><input type="text" id="adresse" placeholder="ex: Av. Lumumba n°12, Kinshasa"></div>
+                    <div><label>Date de naissance :</label><input type="date" id="date_naissance"></div>
+                </div>
+                <button type="submit" id="btn-submit">Enregistrer le locataire</button>
+                <button type="button" id="btn-cancel" style="background: #6b7280; display: none; margin-left: 10px;" onclick="resetForm()">Annuler</button>
+            </form>
+        </div>
 
-            <!-- Tableau des locataires -->
-            <section class="card" style="max-width: 100%; overflow-x: auto;">
-                <h3>Liste des Locataires Enregistrés</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nom</th>
-                            <th>Prénom</th>
-                            <th>Email</th>
-                            <th>Téléphone</th>
-                            <th>Date de naissance</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="locataires-list">
-                        <tr><td colspan="6" style="text-align:center;">Chargement...</td></tr>
-                    </tbody>
-                </table>
-            </section>
-        </main>
-    </div>
+        <div class="card">
+            <h3>Liste des Locataires Enregistrés</h3>
+            <table>
+                <thead>
+                    <tr><th>Nom & Prénom</th><th>Contacts</th><th>Adresse</th><th>Date Naissance</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="liste-locataires"></tbody>
+            </table>
+        </div>
+    </main>
 
-  <script>
-        function toggleFormulaire() {
-            const form = document.getElementById('form-container');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    <script>
+        let locatairesGlobal = [];
+
+        async function chargerLocataires() {
+            const res = await fetch('/api/locataires');
+            locatairesGlobal = await res.json();
+            const tbody = document.getElementById('liste-locataires');
+            tbody.innerHTML = '';
+
+            locatairesGlobal.forEach(l => {
+                const messageBienvenue = encodeURIComponent(`Bonjour ${l.prenom} ${l.nom}, nous vous souhaitons la bienvenue chez ImmoGérer RDC ! Votre compte locataire a bien été enregistré avec succès. Merci de votre confiance.`);
+                const telNettoye = l.telephone ? l.telephone.replace(/[^0-9]/g, '') : '';
+                const lienWhatsapp = telNettoye ? `https://wa.me/${telNettoye}?text=${messageBienvenue}` : `https://wa.me/?text=${messageBienvenue}`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${l.nom.toUpperCase()}</strong> ${l.prenom}</td>
+                        <td>Tél: ${l.telephone || '-'}<br><small>${l.email || ''}</small></td>
+                        <td>${l.adresse || '-'}</td>
+                        <td>${l.date_naissance ? l.date_naissance.split('T')[0] : '-'}</td>
+                        <td>
+                            <button class="btn-warning" onclick="preparerModif(${l.id})">Modifier</button>
+                            <a href="${lienWhatsapp}" target="_blank" class="btn-whatsapp" title="Envoyer le message de bienvenue WhatsApp"><i class="fa-brands fa-whatsapp"></i> Bienvenue</a>
+                            <button class="btn-danger" onclick="supprimerLocataire(${l.id})">Supprimer</button>
+                        </td>
+                    </tr>
+                `;
+            });
         }
 
-        function chargerLocataires() {
-            fetch('/api/locataires')
-                .then(res => res.json())
-                .then(data => {
-                    const tbody = document.getElementById('locataires-list');
-                    if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Aucun locataire enregistré.</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = data.map(l => `
-                        <tr>
-                            <td>${l.nom || ''}</td>
-                            <td>${l.prenom || ''}</td>
-                            <td>${l.email || ''}</td>
-                            <td>${l.telephone || ''}</td>
-                            <td>${l.date_naissance ? l.date_naissance.substring(0, 10) : ''}</td>
-                            <td>
-                                <button class="btn-action btn-delete" onclick="supprimerLocataire(${l.id})">Supprimer</button>
-                            </td>
-                        </tr>
-                    `).join('');
-                }).catch(err => {
-                    console.warn("Session expirée, redirection vers le login...");
-                    window.location.href = '/login';
-                });
+        async function enregistrerLocataire(event) {
+            event.preventDefault();
+            const id = document.getElementById('locataire_id_edit').value;
+            const data = {
+                nom: document.getElementById('nom').value,
+                prenom: document.getElementById('prenom').value,
+                email: document.getElementById('email').value,
+                telephone: document.getElementById('telephone').value,
+                adresse: document.getElementById('adresse').value,
+                date_naissance: document.getElementById('date_naissance').value
+            };
+
+            const url = id ? `/api/locataires/${id}` : '/api/locataires';
+            const method = id ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            resetForm();
+            chargerLocataires();
         }
 
-        function supprimerLocataire(id) {
-            if (confirm("Voulez-vous vraiment supprimer ce locataire ?")) {
-                fetch(`/api/locataires/${id}`, { method: 'DELETE' })
-                    .then(res => { if (res.ok) chargerLocataires(); });
+        function preparerModif(id) {
+            const l = locatairesGlobal.find(x => x.id === id);
+            if (!l) return;
+            document.getElementById('locataire_id_edit').value = l.id;
+            document.getElementById('nom').value = l.nom || '';
+            document.getElementById('prenom').value = l.prenom || '';
+            document.getElementById('email').value = l.email || '';
+            document.getElementById('telephone').value = l.telephone || '';
+            document.getElementById('adresse').value = l.adresse || '';
+            document.getElementById('date_naissance').value = l.date_naissance ? l.date_naissance.split('T')[0] : '';
+
+            document.getElementById('form-title').innerText = "Modifier le locataire : " + l.nom;
+            document.getElementById('btn-submit').innerText = "Mettre à jour";
+            document.getElementById('btn-cancel').style.display = 'inline-block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('locataire-form').reset();
+            document.getElementById('locataire_id_edit').value = '';
+            document.getElementById('form-title').innerText = "Ajouter un nouveau locataire";
+            document.getElementById('btn-submit').innerText = "Enregistrer le locataire";
+            document.getElementById('btn-cancel').style.display = 'none';
+        }
+
+        async function supprimerLocataire(id) {
+            if(confirm("Voulez-vous vraiment supprimer ce locataire ?")) {
+                await fetch(`/api/locataires/${id}`, { method: 'DELETE' });
+                chargerLocataires();
             }
         }
 
