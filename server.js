@@ -16,7 +16,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Création automatique de toutes les tables, y compris l'inventaire
+// Création automatique de toutes les tables et colonnes au démarrage
 pool.query(`
     CREATE TABLE IF NOT EXISTS locataires (
         id SERIAL PRIMARY KEY,
@@ -24,8 +24,10 @@ pool.query(`
         prenom VARCHAR(100),
         email VARCHAR(100),
         telephone VARCHAR(50),
+        adresse TEXT,
         date_naissance DATE
     );
+    ALTER TABLE locataires ADD COLUMN IF NOT EXISTS adresse TEXT;
 
     CREATE TABLE IF NOT EXISTS biens (
         id SERIAL PRIMARY KEY,
@@ -53,7 +55,6 @@ pool.query(`
         statut VARCHAR(50) DEFAULT 'Payé'
     );
 
-    -- TABLE INVENTAIRE & STOCK (Vérifiée et intégrée)
     CREATE TABLE IF NOT EXISTS inventaire (
         id SERIAL PRIMARY KEY,
         designation VARCHAR(150) NOT NULL,
@@ -169,13 +170,29 @@ app.get('/api/locataires', async (req, res) => {
         res.json(result.rows);
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.post('/api/locataires', async (req, res) => {
     try {
-        const { nom, prenom, email, telephone, date_naissance } = req.body;
-        await pool.query('INSERT INTO locataires (nom, prenom, email, telephone, date_naissance) VALUES ($1, $2, $3, $4, $5)', [nom, prenom, email, telephone, date_naissance || null]);
+        const { nom, prenom, email, telephone, adresse, date_naissance } = req.body;
+        await pool.query(
+            'INSERT INTO locataires (nom, prenom, email, telephone, adresse, date_naissance) VALUES ($1, $2, $3, $4, $5, $6)',
+            [nom, prenom, email, telephone, adresse, date_naissance || null]
+        );
         res.redirect('/locataires');
     } catch (err) { res.status(500).send(err.message); }
 });
+
+app.put('/api/locataires/:id', async (req, res) => {
+    try {
+        const { nom, prenom, email, telephone, adresse, date_naissance } = req.body;
+        await pool.query(
+            'UPDATE locataires SET nom = $1, prenom = $2, email = $3, telephone = $4, adresse = $5, date_naissance = $6 WHERE id = $7',
+            [nom, prenom, email, telephone, adresse, date_naissance || null, req.params.id]
+        );
+        res.sendStatus(200);
+    } catch (err) { res.status(500).send(err.message); }
+});
+
 app.delete('/api/locataires/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM locataires WHERE id = $1', [req.params.id]);
@@ -190,13 +207,29 @@ app.get('/api/biens', async (req, res) => {
         res.json(result.rows);
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.post('/api/biens', async (req, res) => {
     try {
         const { nom_bien, type, loyer, statut } = req.body;
-        await pool.query('INSERT INTO biens (nom_bien, type, loyer, statut) VALUES ($1, $2, $3, $4)', [nom_bien, type, loyer, statut || 'Libre']);
+        await pool.query(
+            'INSERT INTO biens (nom_bien, type, loyer, statut) VALUES ($1, $2, $3, $4)',
+            [nom_bien, type, loyer, statut || 'Libre']
+        );
         res.redirect('/biens');
     } catch (err) { res.status(500).send(err.message); }
 });
+
+app.put('/api/biens/:id', async (req, res) => {
+    try {
+        const { nom_bien, type, loyer, statut } = req.body;
+        await pool.query(
+            'UPDATE biens SET nom_bien = $1, type = $2, loyer = $3, statut = $4 WHERE id = $5',
+            [nom_bien, type, loyer, statut || 'Libre', req.params.id]
+        );
+        res.sendStatus(200);
+    } catch (err) { res.status(500).send(err.message); }
+});
+
 app.delete('/api/biens/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM biens WHERE id = $1', [req.params.id]);
@@ -212,6 +245,7 @@ app.get('/api/baux', async (req, res) => {
         res.json(result.rows);
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.post('/api/baux', async (req, res) => {
     try {
         let { locataire_id, bien_id, date_debut, date_fin, contrat_url } = req.body;
@@ -220,6 +254,7 @@ app.post('/api/baux', async (req, res) => {
         res.redirect('/baux');
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.delete('/api/baux/:id', async (req, res) => {
     try {
         const bail = await pool.query('SELECT bien_id FROM baux WHERE id = $1', [req.params.id]);
@@ -237,6 +272,7 @@ app.get('/api/paiements', async (req, res) => {
         res.json(result.rows);
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.post('/api/paiements', async (req, res) => {
     try {
         let { locataire_id, bien_id, date_paiement, montant, statut } = req.body;
@@ -247,6 +283,7 @@ app.post('/api/paiements', async (req, res) => {
         res.redirect('/paiements');
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.delete('/api/paiements/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM paiements WHERE id = $1', [req.params.id]);
@@ -261,6 +298,7 @@ app.get('/api/inventaire', async (req, res) => {
         res.json(result.rows);
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.post('/api/inventaire', async (req, res) => {
     try {
         const { designation, reference, quantite_stock, prix_unitaire, description } = req.body;
@@ -268,6 +306,7 @@ app.post('/api/inventaire', async (req, res) => {
         res.redirect('/inventaire');
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.delete('/api/inventaire/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM inventaire WHERE id = $1', [req.params.id]);
@@ -367,6 +406,7 @@ app.get('/api/employes', async (req, res) => {
         res.json(result.rows);
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.post('/api/employes', async (req, res) => {
     try {
         const { nom, prenom, email, telephone, adresse, lieu_naissance, date_naissance, enfants_charges, poste, departement, date_embauche, type_contrat, salaire_base } = req.body;
@@ -374,6 +414,7 @@ app.post('/api/employes', async (req, res) => {
         res.redirect('/rh');
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.delete('/api/employes/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM employes WHERE id = $1', [req.params.id]);
@@ -388,6 +429,7 @@ app.get('/api/presences', async (req, res) => {
         res.json(result.rows);
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.post('/api/presences/sync', async (req, res) => {
     try {
         const pointages = req.body;
@@ -411,6 +453,7 @@ app.get('/api/comptabilite/journal', async (req, res) => {
         res.json(result.rows);
     } catch (err) { res.status(500).send(err.message); }
 });
+
 app.post('/api/comptabilite/ecriture', async (req, res) => {
     try {
         let { date_operation, libelle, compte_debit, compte_credit, montant, type_flux } = req.body;
