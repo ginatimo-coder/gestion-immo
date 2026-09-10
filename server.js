@@ -34,8 +34,10 @@ pool.query(`
         nom_bien VARCHAR(150),
         type VARCHAR(50),
         loyer NUMERIC,
+        irl NUMERIC,
         statut VARCHAR(50) DEFAULT 'Libre'
     );
+    ALTER TABLE biens ADD COLUMN IF NOT EXISTS irl NUMERIC;
 
     CREATE TABLE IF NOT EXISTS baux (
         id SERIAL PRIMARY KEY,
@@ -200,7 +202,7 @@ app.delete('/api/locataires/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API BIENS ---
+// --- API BIENS & IRL (20%) ---
 app.get('/api/biens', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM biens ORDER BY id DESC');
@@ -211,9 +213,12 @@ app.get('/api/biens', async (req, res) => {
 app.post('/api/biens', async (req, res) => {
     try {
         const { nom_bien, type, loyer, statut } = req.body;
+        const loyerNum = parseFloat(loyer) || 0;
+        const irlVal = loyerNum * 0.20;
+
         await pool.query(
-            'INSERT INTO biens (nom_bien, type, loyer, statut) VALUES ($1, $2, $3, $4)',
-            [nom_bien, type, loyer, statut || 'Libre']
+            'INSERT INTO biens (nom_bien, type, loyer, irl, statut) VALUES ($1, $2, $3, $4, $5)',
+            [nom_bien, type, loyerNum, irlVal, statut || 'Libre']
         );
         res.redirect('/biens');
     } catch (err) { res.status(500).send(err.message); }
@@ -222,9 +227,12 @@ app.post('/api/biens', async (req, res) => {
 app.put('/api/biens/:id', async (req, res) => {
     try {
         const { nom_bien, type, loyer, statut } = req.body;
+        const loyerNum = parseFloat(loyer) || 0;
+        const irlVal = loyerNum * 0.20;
+
         await pool.query(
-            'UPDATE biens SET nom_bien = $1, type = $2, loyer = $3, statut = $4 WHERE id = $5',
-            [nom_bien, type, loyer, statut || 'Libre', req.params.id]
+            'UPDATE biens SET nom_bien = $1, type = $2, loyer = $3, irl = $4, statut = $5 WHERE id = $6',
+            [nom_bien, type, loyerNum, irlVal, statut || 'Libre', req.params.id]
         );
         res.sendStatus(200);
     } catch (err) { res.status(500).send(err.message); }
@@ -264,7 +272,7 @@ app.delete('/api/baux/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API PAIEMENTS ---
+// --- API PAIEMENTS & COMPTABILITÉ CAISSE ---
 app.get('/api/paiements', async (req, res) => {
     try {
         const query = `SELECT paiements.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM paiements JOIN locataires ON paiements.locataire_id = locataires.id JOIN biens ON paiements.bien_id = biens.id ORDER BY paiements.id DESC;`;
@@ -277,8 +285,13 @@ app.post('/api/paiements', async (req, res) => {
     try {
         let { locataire_id, bien_id, date_paiement, montant, statut } = req.body;
         await pool.query('INSERT INTO paiements (locataire_id, bien_id, date_paiement, montant, statut) VALUES ($1, $2, $3, $4, $5)', [locataire_id, bien_id, date_paiement || null, montant, statut || 'Payé']);
+        
         if ((statut || 'Payé') === 'Payé') {
-            await pool.query(`INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) VALUES ($1, $2, '531 - Caisse', '706 - Location de biens', $3, 'Encaissement')`, [date_paiement || null, `Encaissement loyer - Locataire ID ${locataire_id}`, montant]);
+            await pool.query(
+                `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
+                 VALUES ($1, $2, '531 - Caisse', '706 - Location de biens', $3, 'Encaissement')`,
+                [date_paiement || null, `Paiement loyer - Locataire ID ${locataire_id} (Bien ID ${bien_id})`, montant]
+            );
         }
         res.redirect('/paiements');
     } catch (err) { res.status(500).send(err.message); }
