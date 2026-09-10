@@ -489,6 +489,31 @@ app.post('/api/presences/sync', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
+// --- API PAIE ---
+app.post('/api/paie', async (req, res) => {
+    try {
+        const { employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net, date_paiement } = req.body;
+        await pool.query(
+            `INSERT INTO paie (employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net, date_paiement) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [employe_id, mois, annee, primes || 0, heures_sup || 0, charges_sociales || 0, salaire_net || 0, date_paiement || null]
+        );
+        res.sendStatus(200);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.get('/api/paie', async (req, res) => {
+    try {
+        const query = `SELECT paie.*, employes.nom, employes.prenom, employes.poste FROM paie JOIN employes ON paie.employe_id = employes.id ORDER BY paie.id DESC;`;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
 // --- API COMPTABILITÉ AVANCÉE (Journal, Grand Livre, Balance) ---
 app.get('/api/comptabilite/journal', async (req, res) => {
     try {
