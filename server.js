@@ -334,7 +334,7 @@ app.get('/api/caisse', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API INVENTAIRE & STOCK ---
+// --- API INVENTAIRE & STOCK (Lié à la Comptabilité) ---
 app.get('/api/inventaire', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM inventaire ORDER BY id DESC');
@@ -344,8 +344,29 @@ app.get('/api/inventaire', async (req, res) => {
 
 app.post('/api/inventaire', async (req, res) => {
     try {
-        const { designation, reference, quantite_stock, prix_unitaire, description } = req.body;
-        await pool.query('INSERT INTO inventaire (designation, reference, quantite_stock, prix_unitaire, description) VALUES ($1, $2, $3, $4, $5)', [designation, reference, quantite_stock || 0, prix_unitaire || 0, description]);
+        const { designation, reference, quantite_stock, prix_unitaire, description, compte_debit, compte_credit } = req.body;
+        const qte = parseInt(quantite_stock) || 0;
+        const pu = parseFloat(prix_unitaire) || 0;
+        const valeurTotale = qte * pu;
+
+        await pool.query(
+            'INSERT INTO inventaire (designation, reference, quantite_stock, prix_unitaire, description) VALUES ($1, $2, $3, $4, $5)',
+            [designation, reference, qte, pu, description]
+        );
+
+        if (valeurTotale > 0 && compte_debit && compte_credit) {
+            await pool.query(
+                `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
+                 VALUES (CURRENT_DATE, $1, $2, $3, $4, 'Décaissement')`,
+                [
+                    `Achat stock / Entrée : ${designation} (Qté: ${qte})`,
+                    compte_debit,
+                    compte_credit,
+                    valeurTotale
+                ]
+            );
+        }
+
         res.redirect('/inventaire');
     } catch (err) { res.status(500).send(err.message); }
 });
@@ -495,14 +516,12 @@ app.post('/api/paie', async (req, res) => {
         const { employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net, date_paiement } = req.body;
         const netNum = parseFloat(salaire_net) || 0;
 
-        // 1. Enregistrement de la paie
         await pool.query(
             `INSERT INTO paie (employe_id, mois, annee, primes, heures_sup, charges_sociales, salaire_net, date_paiement) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
             [employe_id, mois, annee, primes || 0, heures_sup || 0, charges_sociales || 0, netNum, date_paiement || null]
         );
 
-        // 2. Écriture automatique dans le journal comptable (Salaires vs Caisse)
         if (netNum > 0) {
             await pool.query(
                 `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
