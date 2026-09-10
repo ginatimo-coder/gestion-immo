@@ -3,147 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biens Immobiliers - ImmoGérer</title>
+    <title>ImmoGérer - Biens Immobiliers</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; display: flex; }
+        aside { width: 260px; background: white; height: 100vh; position: fixed; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; }
+        .logo-area { padding: 20px; font-size: 22px; font-weight: bold; color: #0284c7; display: flex; align-items: center; gap: 10px; }
+        aside ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        aside ul li a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #4b5563; text-decoration: none; font-weight: 500; transition: 0.2s; }
+        aside ul li a:hover, aside ul li a.active { background: #f0f9ff; color: #0284c7; border-left: 4px solid #0284c7; }
+        main { margin-left: 260px; padding: 30px; width: calc(100% - 260px); box-sizing: border-box; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid #e5e7eb; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+        th { background-color: #f9fafb; color: #374151; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0369a1; }
+        .btn-danger { background: #dc2626; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; }
+        .btn-warning { background: #d97706; padding: 6px 12px; font-size: 12px; color: white; border-radius: 4px; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="brand">
-                <i class="fa-solid fa-building-shield"></i> ImmoGérer
-            </div>
-            <ul>
-                <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
-                <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
-                <li><a href="/biens" class="active"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
-                <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
-                <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
-                <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
-                <li><a href="/factures"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
-                <li><a href="/rh"><i class="fa-solid fa-user-tie"></i> Ressources Humaines</a></li>
-                <li><a href="/logout" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
-            </ul>
-        </aside>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <header class="top-header">
-                <h1>Gestion des Biens Immobiliers</h1>
-                <button class="btn-primary" onclick="toggleFormulaire()">
-                    <i class="fa-solid fa-plus"></i> Ajouter un bien
-                </button>
-            </header>
+    <aside>
+        <div class="logo-area"><i class="fa-solid fa-building-shield"></i> ImmoGérer</div>
+        <ul>
+            <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+            <li><a href="/locataires"><i class="fa-solid fa-users"></i> Locataires</a></li>
+            <li><a href="/biens" class="active"><i class="fa-solid fa-building"></i> Biens immobiliers</a></li>
+            <li><a href="/baux"><i class="fa-solid fa-file-contract"></i> Contrats de Baux</a></li>
+            <li><a href="/paiements"><i class="fa-solid fa-wallet"></i> Finances & Paiements</a></li>
+            <li><a href="/inventaire"><i class="fa-solid fa-boxes-stacked"></i> Inventaire & Stock</a></li>
+            <li><a href="/factures"><i class="fa-solid fa-file-invoice-dollar"></i> Factures & Proformas</a></li>
+            <li><a href="/comptabilite"><i class="fa-solid fa-book"></i> Comptabilité Générale</a></li>
+            <li><a href="/rh"><i class="fa-solid fa-user-tie"></i> Ressources Humaines</a></li>
+            <li><a href="/logout" style="color: #dc2626;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+        </ul>
+    </aside>
 
-            <!-- Formulaire d'ajout -->
-            <div id="form-container" class="form-container" style="display: none;">
-                <h3 style="margin-bottom: 20px; color: #0284c7;">Nouveau Bien Immobilier</h3>
-                <form action="/api/biens" method="POST">
-                    <div class="form-group">
-                        <label>Nom ou Référence du Bien :</label>
-                        <input type="text" name="nom_bien" required placeholder="Ex: Appartement A1 - Résidence Lumière">
-                    </div>
-                    <div class="form-group">
-                        <label>Type de bien :</label>
-                        <select name="type" required>
-                            <option value="Appartement">Appartement</option>
-                            <option value="Villa">Villa</option>
-                            <option value="Studio">Studio</option>
-                            <option value="Local Commercial">Local Commercial</option>
-                            <option value="Entrepot">Entrepôt</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Loyer mensuel ($) :</label>
-                        <input type="number" step="0.01" name="loyer" required placeholder="Ex: 500">
-                    </div>
-                    <div class="form-group">
-                        <label>Statut initial :</label>
-                        <select name="statut">
+    <main>
+        <h2>Gestion des Biens Immobiliers</h2>
+        
+        <div class="card">
+            <h3 id="form-title">Ajouter un nouveau bien</h3>
+            <form id="bien-form" onsubmit="enregistrerBien(event)">
+                <input type="hidden" id="bien_id_edit">
+                <div class="form-grid">
+                    <div><label>Nom / Numéro du bien :</label><input type="text" id="nom_bien" required></div>
+                    <div><label>Type de bien :</label><input type="text" id="type" placeholder="Appartement, Villa, Bureau..." required></div>
+                    <div><label>Loyer mensuel ($) :</label><input type="number" step="0.01" id="loyer" required></div>
+                    <div>
+                        <label>Statut :</label>
+                        <select id="statut">
                             <option value="Libre">Libre</option>
                             <option value="Loué">Loué</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn-primary">Enregistrer le bien</button>
-                </form>
-            </div>
-
-            <!-- Liste des Biens -->
-            <div class="card">
-                <h3 style="margin-bottom: 20px; color: #1e293b;">Liste de vos biens</h3>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nom / Référence</th>
-                                <th>Type</th>
-                                <th>Loyer Mensuel</th>
-                                <th>Statut</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="biens-list">
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: #64748b;">Chargement des données...</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
-            </div>
-        </main>
-    </div>
+                <button type="submit" id="btn-submit">Enregistrer le bien</button>
+                <button type="button" id="btn-cancel" style="background: #6b7280; display: none; margin-left: 10px;" onclick="resetForm()">Annuler</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Liste des Biens Immobiliers</h3>
+            <table>
+                <thead>
+                    <tr><th>Nom du Bien</th><th>Type</th><th>Loyer Mensuel</th><th>Statut</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="liste-biens"></tbody>
+            </table>
+        </div>
+    </main>
 
     <script>
-        function toggleFormulaire() {
-            const form = document.getElementById('form-container');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        let biensGlobal = [];
+
+        async function chargerBiens() {
+            const res = await fetch('/api/biens');
+            biensGlobal = await res.json();
+            const tbody = document.getElementById('liste-biens');
+            tbody.innerHTML = '';
+
+            biensGlobal.forEach(b => {
+                const badgeColor = b.statut === 'Loué' ? '#dc2626' : '#059669';
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${b.nom_bien}</strong></td>
+                        <td>${b.type}</td>
+                        <td><strong>${parseFloat(b.loyer).toLocaleString()} $</strong></td>
+                        <td><span style="color: white; background: ${badgeColor}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${b.statut}</span></td>
+                        <td>
+                            <button class="btn-warning" onclick="preparerModif(${b.id})">Modifier</button>
+                            <button class="btn-danger" onclick="supprimerBien(${b.id})">Supprimer</button>
+                        </td>
+                    </tr>
+                `;
+            });
         }
 
-        function chargerBiens() {
-            fetch('/api/biens')
-                .then(res => res.json())
-                .then(data => {
-                    const tbody = document.getElementById('biens-list');
-                    if (!tbody) return;
-                    
-                    if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #64748b;">Aucun bien immobilier enregistré.</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = data.map(b => `
-                        <tr>
-                            <td><strong>${b.nom_bien || ''}</strong></td>
-                            <td>${b.type || ''}</td>
-                            <td>${parseFloat(b.loyer || 0).toLocaleString()} $</td>
-                            <td><span class="badge ${b.statut === 'Loué' ? 'badge-success' : 'badge-warning'}">${b.statut || 'Libre'}</span></td>
-                            <td>
-                                <button class="btn-action btn-delete" onclick="supprimerBien(${b.id})">Supprimer</button>
-                            </td>
-                        </tr>
-                    `).join('');
-                })
-                .catch(err => {
-                    console.error("Erreur de chargement des biens:", err);
-                });
+        async function enregistrerBien(event) {
+            event.preventDefault();
+            const id = document.getElementById('bien_id_edit').value;
+            const data = {
+                nom_bien: document.getElementById('nom_bien').value,
+                type: document.getElementById('type').value,
+                loyer: document.getElementById('loyer').value,
+                statut: document.getElementById('statut').value
+            };
+
+            const url = id ? `/api/biens/${id}` : '/api/biens';
+            const method = id ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            resetForm();
+            chargerBiens();
         }
 
-        function supprimerBien(id) {
-            if (confirm("Voulez-vous vraiment supprimer ce bien immobilier ?")) {
-                fetch(`/api/biens/${id}`, { method: 'DELETE' })
-                    .then(res => { 
-                        if (res.ok) {
-                            chargerBiens();
-                        } else {
-                            alert("Erreur lors de la suppression.");
-                        }
-                    });
+        function preparerModif(id) {
+            const b = biensGlobal.find(x => x.id === id);
+            if (!b) return;
+            document.getElementById('bien_id_edit').value = b.id;
+            document.getElementById('nom_bien').value = b.nom_bien || '';
+            document.getElementById('type').value = b.type || '';
+            document.getElementById('loyer').value = b.loyer || '';
+            document.getElementById('statut').value = b.statut || 'Libre';
+
+            document.getElementById('form-title').innerText = "Modifier le bien : " + b.nom_bien;
+            document.getElementById('btn-submit').innerText = "Mettre à jour";
+            document.getElementById('btn-cancel').style.display = 'inline-block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('bien-form').reset();
+            document.getElementById('bien_id_edit').value = '';
+            document.getElementById('form-title').innerText = "Ajouter un nouveau bien";
+            document.getElementById('btn-submit').innerText = "Enregistrer le bien";
+            document.getElementById('btn-cancel').style.display = 'none';
+        }
+
+        async function supprimerBien(id) {
+            if(confirm("Voulez-vous vraiment supprimer ce bien ?")) {
+                await fetch(`/api/biens/${id}`, { method: 'DELETE' });
+                chargerBiens();
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            chargerBiens();
-        });
+        chargerBiens();
     </script>
 </body>
 </html>
