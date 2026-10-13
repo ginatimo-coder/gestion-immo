@@ -2,44 +2,26 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Connexion - ImmoGérer</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImmoGérer - Connexion</title>
     <style>
-        body {
-            background-color: #f1f5f9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .login-card {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid #e2e8f0;
-            text-align: center;
-        }
-        .login-card h2 {
-            color: #0284c7;
-            margin-bottom: 25px;
-            font-size: 24px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f9ff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h2 { color: #0284c7; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background: #0284c7; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #0369a1; }
+        .error { color: #dc2626; font-size: 14px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
     <div class="login-card">
-        <h2><i class="fa-solid fa-building-shield"></i> ImmoGérer</h2>
-        <p style="color: #64748b; margin-bottom: 20px; font-size: 13px;">Espace sécurisé de gestion immobilière</p>
+        <h2>ImmoGérer</h2>
+        <p style="color: #4b5563; margin-bottom: 25px;">Espace sécurisé de gestion immobilière</p>
+        
         <form action="/api/login" method="POST">
-            <div class="form-group" style="text-align: left;">
-                <label>Mot de passe administrateur :</label>
-                <input type="password" name="password" required placeholder="Entrez votre mot de passe">
-            </div>
-            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Se connecter</button>
+            <input type="password" name="password" placeholder="Mot de passe administrateur" required>
+            <button type="submit">Se connecter</button>
         </form>
     </div>
 </body>
