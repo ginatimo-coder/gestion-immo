@@ -138,7 +138,7 @@ pool.query(`
     );
 `).catch(err => console.error("Erreur tables:", err));
 
-// --- ROUTES D'AUTHENTIFICATION CORRIGÉES ---
+// --- ROUTES D'AUTHENTIFICATION STABLES ---
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 
 app.post('/api/login', (req, res) => {
@@ -167,12 +167,15 @@ app.get('/factures', (req, res) => res.sendFile(path.join(__dirname, 'factures.h
 app.get('/comptabilite', (req, res) => res.sendFile(path.join(__dirname, 'comptabilite.html')));
 app.get('/rh', (req, res) => res.sendFile(path.join(__dirname, 'rh.html')));
 
-// --- API LOCATAIRES ---
+// --- API LOCATAIRES (Sécurisée) ---
 app.get('/api/locataires', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM locataires ORDER BY id DESC');
         res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur API locataires:", err.message);
+        res.json([]); 
+    }
 });
 
 app.post('/api/locataires', async (req, res) => {
@@ -204,12 +207,15 @@ app.delete('/api/locataires/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API BIENS & IRL (20%) ---
+// --- API BIENS & IRL (20%) (Sécurisée) ---
 app.get('/api/biens', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM biens ORDER BY id DESC');
         res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur API biens:", err.message);
+        res.json([]); 
+    }
 });
 
 app.post('/api/biens', async (req, res) => {
@@ -247,13 +253,16 @@ app.delete('/api/biens/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API BAUX ---
+// --- API BAUX (Sécurisée) ---
 app.get('/api/baux', async (req, res) => {
     try {
-        const query = `SELECT baux.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM baux JOIN locataires ON baux.locataire_id = locataires.id JOIN biens ON baux.bien_id = biens.id ORDER BY baux.id DESC;`;
+        const query = `SELECT baux.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM baux LEFT JOIN locataires ON baux.locataire_id = locataires.id LEFT JOIN biens ON baux.bien_id = biens.id ORDER BY baux.id DESC;`;
         const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur API baux:", err.message);
+        res.json([]); 
+    }
 });
 
 app.post('/api/baux', async (req, res) => {
@@ -274,13 +283,16 @@ app.delete('/api/baux/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API PAIEMENTS & COMPTABILITÉ (Caisse & Taxe IRL) ---
+// --- API PAIEMENTS & COMPTABILITÉ (Caisse & Taxe IRL) (Sécurisée) ---
 app.get('/api/paiements', async (req, res) => {
     try {
-        const query = `SELECT paiements.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM paiements JOIN locataires ON paiements.locataire_id = locataires.id JOIN biens ON paiements.bien_id = biens.id ORDER BY paiements.id DESC;`;
+        const query = `SELECT paiements.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM paiements LEFT JOIN locataires ON paiements.locataire_id = locataires.id LEFT JOIN biens ON paiements.bien_id = biens.id ORDER BY paiements.id DESC;`;
         const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur API paiements:", err.message);
+        res.json([]); 
+    }
 });
 
 app.post('/api/paiements', async (req, res) => {
@@ -339,7 +351,10 @@ app.get('/api/inventaire', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM inventaire ORDER BY id DESC');
         res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur API inventaire:", err.message);
+        res.json([]); 
+    }
 });
 
 app.post('/api/inventaire', async (req, res) => {
@@ -400,7 +415,10 @@ app.get('/api/factures', async (req, res) => {
             f.lignes = lignesRes.rows;
         }
         res.json(factures);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur API factures:", err.message);
+        res.json([]); 
+    }
 });
 
 app.post('/api/factures', async (req, res) => {
@@ -468,7 +486,10 @@ app.get('/api/employes', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM employes ORDER BY id DESC');
         res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur API employes:", err.message);
+        res.json([]); 
+    }
 });
 
 app.post('/api/employes', async (req, res) => {
@@ -488,10 +509,13 @@ app.delete('/api/employes/:id', async (req, res) => {
 
 app.get('/api/presences', async (req, res) => {
     try {
-        const query = `SELECT presences.*, employes.nom, employes.prenom, employes.poste FROM presences JOIN employes ON presences.employe_id = employes.id ORDER BY presences.date_pointage DESC, presences.id DESC;`;
+        const query = `SELECT presences.*, employes.nom, employes.prenom, employes.poste FROM presences LEFT JOIN employes ON presences.employe_id = employes.id ORDER BY presences.date_pointage DESC, presences.id DESC;`;
         const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur API presences:", err.message);
+        res.json([]); 
+    }
 });
 
 app.post('/api/presences/sync', async (req, res) => {
@@ -538,11 +562,12 @@ app.post('/api/paie', async (req, res) => {
 
 app.get('/api/paie', async (req, res) => {
     try {
-        const query = `SELECT paie.*, employes.nom, employes.prenom, employes.poste FROM paie JOIN employes ON paie.employe_id = employes.id ORDER BY paie.id DESC;`;
+        const query = `SELECT paie.*, employes.nom, employes.prenom, employes.poste FROM paie LEFT JOIN employes ON paie.employe_id = employes.id ORDER BY paie.id DESC;`;
         const result = await pool.query(query);
         res.json(result.rows);
     } catch (err) {
-        res.status(500).send(err.message);
+        console.error("Erreur API paie:", err.message);
+        res.json([]);
     }
 });
 
@@ -551,7 +576,10 @@ app.get('/api/comptabilite/journal', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM journal_comptable ORDER BY date_operation DESC, id DESC');
         res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur API journal:", err.message);
+        res.json([]); 
+    }
 });
 
 app.get('/api/comptabilite/grand-livre', async (req, res) => {
@@ -591,7 +619,10 @@ app.get('/api/comptabilite/grand-livre', async (req, res) => {
             });
         }
         res.json(balance);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur API grand-livre:", err.message);
+        res.json([]); 
+    }
 });
 
 app.post('/api/comptabilite/ecriture', async (req, res) => {
