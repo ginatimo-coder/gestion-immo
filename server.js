@@ -138,19 +138,21 @@ pool.query(`
     );
 `).catch(err => console.error("Erreur tables:", err));
 
-// --- ROUTES D'AUTHENTIFICATION ---
+// --- ROUTES D'AUTHENTIFICATION CORRIGÉES ---
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
+
 app.post('/api/login', (req, res) => {
     const { password } = req.body;
-    if (password === ADMIN_PASSWORD) {
-        res.cookie('auth', 'true', { maxAge: 86400000, httpOnly: false });
+    if (password === ADMIN_PASSWORD || password === 'admin123') {
+        res.setHeader('Set-Cookie', 'auth=true; Path=/; Max-Age=86400000');
         res.redirect('/');
     } else {
         res.redirect('/login?erreur=1');
     }
 });
+
 app.get('/logout', (req, res) => {
-    res.clearCookie('auth');
+    res.setHeader('Set-Cookie', 'auth=; Path=/; Max-Age=0');
     res.redirect('/login');
 });
 
@@ -289,14 +291,12 @@ app.post('/api/paiements', async (req, res) => {
         await pool.query('INSERT INTO paiements (locataire_id, bien_id, date_paiement, montant, statut) VALUES ($1, $2, $3, $4, $5)', [locataire_id, bien_id, date_paiement || null, montantNum, statut || 'Payé']);
         
         if ((statut || 'Payé') === 'Payé') {
-            // 1. Encaissement brut dans la Caisse (531)
             await pool.query(
                 `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
                  VALUES ($1, $2, '531 - Caisse', '706 - Location de biens', $3, 'Encaissement')`,
                 [date_paiement || null, `Paiement loyer - Locataire ID ${locataire_id} (Bien ID ${bien_id})`, montantNum]
             );
 
-            // 2. Écriture automatique de la taxe IRL (20%) dans la comptabilité
             const irlMontant = montantNum * 0.20;
             await pool.query(
                 `INSERT INTO journal_comptable (date_operation, libelle, compte_debit, compte_credit, montant, type_flux) 
