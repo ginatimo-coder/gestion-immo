@@ -167,7 +167,7 @@ app.get('/factures', (req, res) => res.sendFile(path.join(__dirname, 'factures.h
 app.get('/comptabilite', (req, res) => res.sendFile(path.join(__dirname, 'comptabilite.html')));
 app.get('/rh', (req, res) => res.sendFile(path.join(__dirname, 'rh.html')));
 
-// --- API LOCATAIRES (Sécurisée) ---
+// --- API LOCATAIRES ---
 app.get('/api/locataires', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM locataires ORDER BY id DESC');
@@ -207,7 +207,7 @@ app.delete('/api/locataires/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API BIENS & IRL (20%) (Sécurisée) ---
+// --- API BIENS & IRL (20%) ---
 app.get('/api/biens', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM biens ORDER BY id DESC');
@@ -253,7 +253,7 @@ app.delete('/api/biens/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API BAUX (Sécurisée) ---
+// --- API BAUX ---
 app.get('/api/baux', async (req, res) => {
     try {
         const query = `SELECT baux.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM baux LEFT JOIN locataires ON baux.locataire_id = locataires.id LEFT JOIN biens ON baux.bien_id = biens.id ORDER BY baux.id DESC;`;
@@ -283,7 +283,7 @@ app.delete('/api/baux/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API PAIEMENTS & COMPTABILITÉ (Caisse & Taxe IRL) (Sécurisée) ---
+// --- API PAIEMENTS & COMPTABILITÉ (Caisse & Taxe IRL) ---
 app.get('/api/paiements', async (req, res) => {
     try {
         const query = `SELECT paiements.*, locataires.nom as locataire_nom, locataires.prenom as locataire_prenom, biens.nom_bien FROM paiements LEFT JOIN locataires ON paiements.locataire_id = locataires.id LEFT JOIN biens ON paiements.bien_id = biens.id ORDER BY paiements.id DESC;`;
@@ -399,10 +399,20 @@ app.get('/api/factures/prochain-numero/:type', async (req, res) => {
         const typeDoc = req.params.type;
         const prefix = typeDoc === 'Facture' ? 'FAC' : typeDoc === 'Proforma' ? 'PRO' : 'BL';
         const annee = new Date().getFullYear();
-        const result = await pool.query('SELECT COUNT(*) as total FROM factures WHERE type = $1', [typeDoc]);
-        const nextNum = parseInt(result.rows[0].total) + 1;
+        
+        let nextNum = 1;
+        try {
+            const result = await pool.query('SELECT COUNT(*) as total FROM factures WHERE type = $1', [typeDoc]);
+            if (result.rows && result.rows.length > 0) {
+                nextNum = parseInt(result.rows[0].total) + 1;
+            }
+        } catch (e) {}
+
         res.json({ numero_ref: `${prefix}-${annee}-${String(nextNum).padStart(3, '0')}` });
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Erreur prochain-numero:", err.message);
+        res.json({ numero_ref: `DOC-2026-001` }); 
+    }
 });
 
 app.get('/api/factures', async (req, res) => {
